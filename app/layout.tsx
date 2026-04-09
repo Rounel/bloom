@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
@@ -8,13 +8,13 @@ const inter = Inter({
   variable: '--font-inter'
 });
 
-const jetbrainsMono = JetBrains_Mono({ 
+const roboto = Roboto({ 
   subsets: ["latin"],
-  variable: '--font-mono'
+  variable: '--font-roboto'
 });
 
 export const metadata: Metadata = {
-  title: 'AfriFinance Terminal | Données Financières Africaines',
+  title: 'Bloomfield Terminal | Données Financières Africaines',
   description: 'Plateforme professionnelle de données financières et macroéconomiques africaines. Analyse BRVM, marchés boursiers, indicateurs économiques.',
   keywords: ['finance africaine', 'BRVM', 'marché boursier', 'données économiques', 'Afrique'],
   generator: 'v0.app',
@@ -50,7 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={`${roboto.variable} antialiased bg-background text-foreground`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
