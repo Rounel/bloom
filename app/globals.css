@@ -82,7 +82,7 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
+  --font-sans: 'Lato', 'Lato Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -129,6 +129,10 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+body {
+  font-family: 'Lato', 'Roboto' sans-serif;
 }
 
 /* Market Ticker Infinite Scroll Animation */

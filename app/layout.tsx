@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono, Roboto } from 'next/font/google'
+import { Inter, Lato, Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const inter = Inter({ 
+const lato = Lato({ 
   subsets: ["latin"],
-  variable: '--font-inter'
+  variable: '--font-lato',
+  weight: ['400', '700']
 });
 
 const roboto = Roboto({ 
   subsets: ["latin"],
-  variable: '--font-roboto'
+  variable: '--font-roboto',
+  weight: ['400', '700']
 });
 
 export const metadata: Metadata = {
@@ -50,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark">
-      <body className={`${roboto.variable} antialiased bg-background text-foreground`}>
+      <body className={`${lato.variable} ${roboto.variable} antialiased bg-background text-foreground`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

@@ -61,34 +61,48 @@ export interface PricePoint {
   volume: number
 }
 
+// Seeded PRNG (mulberry32) — produces identical sequences on server and client
+function createRng(seed: number) {
+  let s = seed >>> 0
+  return () => {
+    s += 0x6d2b79f5
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t)
+    return ((t ^ (t >>> 14)) >>> 0) / 0xffffffff
+  }
+}
+
 export const generateStockHistory = (basePrice: number, days: number = 90): PricePoint[] => {
   const data: PricePoint[] = []
   let currentPrice = basePrice
-  const now = new Date()
-  
+  // Seed from basePrice + days so each stock/range combo is deterministic
+  const rand = createRng(basePrice * 31 + days)
+  // Use a fixed reference date so the series is stable across renders
+  const now = new Date('2026-04-10T00:00:00Z')
+
   for (let i = days; i >= 0; i--) {
     const date = new Date(now)
     date.setDate(date.getDate() - i)
-    
+
     const volatility = 0.02
-    const change = (Math.random() - 0.5) * 2 * volatility * currentPrice
+    const change = (rand() - 0.5) * 2 * volatility * currentPrice
     const open = currentPrice
     const close = currentPrice + change
-    const high = Math.max(open, close) + Math.random() * volatility * currentPrice * 0.5
-    const low = Math.min(open, close) - Math.random() * volatility * currentPrice * 0.5
-    
+    const high = Math.max(open, close) + rand() * volatility * currentPrice * 0.5
+    const low = Math.min(open, close) - rand() * volatility * currentPrice * 0.5
+
     data.push({
       date: date.toISOString().split('T')[0],
       open: Math.round(open),
       high: Math.round(high),
       low: Math.round(low),
       close: Math.round(close),
-      volume: Math.floor(Math.random() * 50000) + 5000,
+      volume: Math.floor(rand() * 50000) + 5000,
     })
-    
+
     currentPrice = close
   }
-  
+
   return data
 }
 
@@ -189,6 +203,185 @@ export const marketIndices: MarketIndex[] = [
   { name: 'NSE All-Share', value: 102458.25, change: -856.50, changePercent: -0.83, yearToDate: 5.8 },
   { name: 'GSE-CI', value: 4125.80, change: 28.45, changePercent: 0.69, yearToDate: 12.3 },
   { name: 'JSE Top 40', value: 78542.15, change: 425.80, changePercent: 0.55, yearToDate: 4.2 },
+]
+
+// Yield Curves – sovereign rates by country and maturity
+export interface YieldPoint {
+  maturity: string // '3M' | '6M' | '1Y' | '2Y' | '5Y' | '10Y'
+  months: number
+}
+
+export interface CountryYields {
+  country: string
+  code: string
+  color: string
+  yields: { maturity: string; months: number; rate: number }[]
+}
+
+export const sovereignYields: CountryYields[] = [
+  {
+    country: "Côte d'Ivoire", code: 'CI', color: '#3b82f6',
+    yields: [
+      { maturity: '3M', months: 3, rate: 4.25 }, { maturity: '6M', months: 6, rate: 4.55 },
+      { maturity: '1A', months: 12, rate: 4.90 }, { maturity: '2A', months: 24, rate: 5.40 },
+      { maturity: '5A', months: 60, rate: 6.20 }, { maturity: '10A', months: 120, rate: 6.85 },
+    ],
+  },
+  {
+    country: 'Sénégal', code: 'SN', color: '#22c55e',
+    yields: [
+      { maturity: '3M', months: 3, rate: 4.50 }, { maturity: '6M', months: 6, rate: 4.85 },
+      { maturity: '1A', months: 12, rate: 5.20 }, { maturity: '2A', months: 24, rate: 5.75 },
+      { maturity: '5A', months: 60, rate: 6.60 }, { maturity: '10A', months: 120, rate: 7.30 },
+    ],
+  },
+  {
+    country: 'Burkina Faso', code: 'BF', color: '#f59e0b',
+    yields: [
+      { maturity: '3M', months: 3, rate: 5.10 }, { maturity: '6M', months: 6, rate: 5.50 },
+      { maturity: '1A', months: 12, rate: 5.90 }, { maturity: '2A', months: 24, rate: 6.50 },
+      { maturity: '5A', months: 60, rate: 7.40 }, { maturity: '10A', months: 120, rate: 8.20 },
+    ],
+  },
+  {
+    country: 'Mali', code: 'ML', color: '#ef4444',
+    yields: [
+      { maturity: '3M', months: 3, rate: 5.30 }, { maturity: '6M', months: 6, rate: 5.75 },
+      { maturity: '1A', months: 12, rate: 6.20 }, { maturity: '2A', months: 24, rate: 6.80 },
+      { maturity: '5A', months: 60, rate: 7.80 }, { maturity: '10A', months: 120, rate: 8.60 },
+    ],
+  },
+  {
+    country: 'Bénin', code: 'BJ', color: '#a855f7',
+    yields: [
+      { maturity: '3M', months: 3, rate: 4.40 }, { maturity: '6M', months: 6, rate: 4.70 },
+      { maturity: '1A', months: 12, rate: 5.10 }, { maturity: '2A', months: 24, rate: 5.60 },
+      { maturity: '5A', months: 60, rate: 6.40 }, { maturity: '10A', months: 120, rate: 7.10 },
+    ],
+  },
+]
+
+// Commodities
+export interface Commodity {
+  name: string
+  symbol: string
+  unit: string
+  price: number
+  change: number
+  changePercent: number
+  weekChange: number
+  monthChange: number
+  category: string
+}
+
+export const commodities: Commodity[] = [
+  { name: 'Cacao', symbol: 'COCOA', unit: '$/tonne', price: 8450, change: 125, changePercent: 1.50, weekChange: 3.2, monthChange: 8.5, category: 'Agricole' },
+  { name: 'Café Robusta', symbol: 'ROBUSTA', unit: '$/tonne', price: 4820, change: -65, changePercent: -1.33, weekChange: -2.1, monthChange: 5.8, category: 'Agricole' },
+  { name: "Huile de palme", symbol: 'PALM', unit: '$/tonne', price: 1065, change: 18, changePercent: 1.72, weekChange: 2.8, monthChange: -1.2, category: 'Agricole' },
+  { name: 'Coton', symbol: 'COTTON', unit: 'cents/lb', price: 88.5, change: -1.2, changePercent: -1.34, weekChange: -0.8, monthChange: 3.1, category: 'Agricole' },
+  { name: 'Caoutchouc', symbol: 'RUBBER', unit: 'cents/kg', price: 198, change: 4.5, changePercent: 2.32, weekChange: 4.1, monthChange: 6.7, category: 'Agricole' },
+  { name: 'Pétrole Brent', symbol: 'BRENT', unit: '$/baril', price: 84.25, change: -0.85, changePercent: -1.00, weekChange: -2.5, monthChange: -4.2, category: 'Énergie' },
+  { name: 'Gaz naturel', symbol: 'NATGAS', unit: '$/MMBTU', price: 2.85, change: 0.08, changePercent: 2.89, weekChange: 5.2, monthChange: -8.1, category: 'Énergie' },
+  { name: 'Or', symbol: 'GOLD', unit: '$/oz', price: 2345, change: 12.5, changePercent: 0.54, weekChange: 1.8, monthChange: 4.5, category: 'Métaux' },
+  { name: 'Bauxite', symbol: 'BAUXI', unit: '$/tonne', price: 52.5, change: 0.8, changePercent: 1.55, weekChange: 2.1, monthChange: 3.8, category: 'Métaux' },
+  { name: 'Phosphate', symbol: 'PHOS', unit: '$/tonne', price: 185, change: -3.5, changePercent: -1.86, weekChange: -1.2, monthChange: 2.4, category: 'Minéraux' },
+]
+
+// Public Finances & Sovereign Debt
+export interface PublicFinance {
+  country: string
+  countryCode: string
+  debtToGDP: number
+  budgetDeficit: number
+  debtService: number // % of revenues
+  primaryBalance: number // % PIB
+  rating: string
+  outlook: 'positive' | 'stable' | 'negative'
+  nextIssuance: string
+  targetAmount: number // Mrd XOF
+}
+
+export const publicFinances: PublicFinance[] = [
+  { country: "Côte d'Ivoire", countryCode: 'CI', debtToGDP: 52.8, budgetDeficit: -4.1, debtService: 28.5, primaryBalance: -1.2, rating: 'BB-', outlook: 'stable', nextIssuance: '2026-04-22', targetAmount: 150 },
+  { country: 'Sénégal', countryCode: 'SN', debtToGDP: 68.5, budgetDeficit: -4.8, debtService: 32.1, primaryBalance: -2.1, rating: 'B+', outlook: 'stable', nextIssuance: '2026-04-29', targetAmount: 100 },
+  { country: 'Burkina Faso', countryCode: 'BF', debtToGDP: 45.2, budgetDeficit: -5.2, debtService: 24.8, primaryBalance: -3.1, rating: 'CCC+', outlook: 'negative', nextIssuance: '2026-05-06', targetAmount: 75 },
+  { country: 'Mali', countryCode: 'ML', debtToGDP: 48.6, budgetDeficit: -4.5, debtService: 22.3, primaryBalance: -2.8, rating: 'CCC', outlook: 'negative', nextIssuance: '2026-05-13', targetAmount: 60 },
+  { country: 'Bénin', countryCode: 'BJ', debtToGDP: 42.1, budgetDeficit: -3.2, debtService: 19.5, primaryBalance: -0.8, rating: 'B+', outlook: 'positive', nextIssuance: '2026-04-30', targetAmount: 80 },
+  { country: 'Niger', countryCode: 'NE', debtToGDP: 38.5, budgetDeficit: -5.8, debtService: 18.2, primaryBalance: -3.5, rating: 'CCC', outlook: 'negative', nextIssuance: '2026-05-20', targetAmount: 50 },
+  { country: 'Togo', countryCode: 'TG', debtToGDP: 58.2, budgetDeficit: -3.8, debtService: 26.4, primaryBalance: -1.5, rating: 'B', outlook: 'stable', nextIssuance: '2026-05-07', targetAmount: 70 },
+]
+
+// Trade Balance
+export interface TradeProduct {
+  product: string
+  category: string
+  exports: number // Mrd XOF
+  imports: number
+  balance: number
+  yoyChange: number
+}
+
+export interface CountryTrade {
+  country: string
+  countryCode: string
+  totalExports: number
+  totalImports: number
+  tradeBalance: number
+  mainExport: string
+  mainImport: string
+  products: TradeProduct[]
+}
+
+export const tradeData: CountryTrade[] = [
+  {
+    country: "Côte d'Ivoire", countryCode: 'CI',
+    totalExports: 6850, totalImports: 5420, tradeBalance: 1430,
+    mainExport: 'Cacao', mainImport: 'Pétrole raffiné',
+    products: [
+      { product: 'Cacao & dérivés', category: 'Agricole', exports: 2850, imports: 0, balance: 2850, yoyChange: 8.5 },
+      { product: 'Pétrole raffiné', category: 'Énergie', exports: 0, imports: 1250, balance: -1250, yoyChange: -5.2 },
+      { product: 'Caoutchouc', category: 'Agricole', exports: 680, imports: 0, balance: 680, yoyChange: 4.1 },
+      { product: 'Noix de cajou', category: 'Agricole', exports: 520, imports: 0, balance: 520, yoyChange: 12.3 },
+      { product: 'Or', category: 'Métaux', exports: 480, imports: 0, balance: 480, yoyChange: 18.5 },
+    ],
+  },
+  {
+    country: 'Sénégal', countryCode: 'SN',
+    totalExports: 2950, totalImports: 4120, tradeBalance: -1170,
+    mainExport: 'Pétrole brut', mainImport: 'Machines',
+    products: [
+      { product: 'Pétrole brut', category: 'Énergie', exports: 850, imports: 0, balance: 850, yoyChange: 42.5 },
+      { product: 'Phosphate', category: 'Minéraux', exports: 380, imports: 0, balance: 380, yoyChange: 2.8 },
+      { product: 'Machines & équipements', category: 'Industrie', exports: 0, imports: 1250, balance: -1250, yoyChange: 8.2 },
+      { product: 'Produits pétroliers', category: 'Énergie', exports: 0, imports: 680, balance: -680, yoyChange: -3.1 },
+      { product: 'Arachides', category: 'Agricole', exports: 290, imports: 0, balance: 290, yoyChange: -1.5 },
+    ],
+  },
+]
+
+// Regional Analysis
+export interface RegionalRanking {
+  country: string
+  countryCode: string
+  stabilityScore: number // 0-100
+  growthScore: number
+  fiscalScore: number
+  monetaryScore: number
+  compositeScore: number
+  rank: number
+  trend: 'up' | 'stable' | 'down'
+  alert?: string
+}
+
+export const regionalRankings: RegionalRanking[] = [
+  { country: "Côte d'Ivoire", countryCode: 'CI', stabilityScore: 78, growthScore: 85, fiscalScore: 72, monetaryScore: 80, compositeScore: 78.8, rank: 1, trend: 'up' },
+  { country: 'Bénin', countryCode: 'BJ', stabilityScore: 75, growthScore: 78, fiscalScore: 80, monetaryScore: 76, compositeScore: 77.3, rank: 2, trend: 'stable' },
+  { country: 'Sénégal', countryCode: 'SN', stabilityScore: 72, growthScore: 75, fiscalScore: 65, monetaryScore: 74, compositeScore: 71.5, rank: 3, trend: 'up' },
+  { country: 'Togo', countryCode: 'TG', stabilityScore: 68, growthScore: 70, fiscalScore: 68, monetaryScore: 70, compositeScore: 69.0, rank: 4, trend: 'stable' },
+  { country: 'Burkina Faso', countryCode: 'BF', stabilityScore: 42, growthScore: 58, fiscalScore: 62, monetaryScore: 65, compositeScore: 56.8, rank: 5, trend: 'down', alert: 'Risque sécuritaire élevé' },
+  { country: 'Mali', countryCode: 'ML', stabilityScore: 38, growthScore: 52, fiscalScore: 58, monetaryScore: 60, compositeScore: 52.0, rank: 6, trend: 'down', alert: 'Instabilité politique' },
+  { country: 'Niger', countryCode: 'NE', stabilityScore: 35, growthScore: 60, fiscalScore: 55, monetaryScore: 58, compositeScore: 52.0, rank: 7, trend: 'down', alert: 'Sanctions CEDEAO levées' },
+  { country: 'Guinée-Bissau', countryCode: 'GW', stabilityScore: 48, growthScore: 45, fiscalScore: 50, monetaryScore: 55, compositeScore: 49.5, rank: 8, trend: 'stable' },
 ]
 
 // Web TV Programs

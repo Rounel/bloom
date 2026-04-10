@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react'
 import { brvmStocks, type Stock } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,11 @@ export function BRVMStocksPanel() {
   const [sortKey, setSortKey] = useState<SortKey>('symbol')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [selectedSector, setSelectedSector] = useState<string>('all')
+  const [lastUpdate, setLastUpdate] = useState<string>('')
+
+  useEffect(() => {
+    setLastUpdate(new Date().toLocaleTimeString('fr-FR'))
+  }, [])
 
   const sectors = ['all', ...new Set(brvmStocks.map(s => s.sector))]
 
@@ -131,7 +136,7 @@ export function BRVMStocksPanel() {
       {/* Footer Stats */}
       <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
         <span>{filteredAndSortedStocks.length} valeurs</span>
-        <span>Dernière MAJ: {new Date().toLocaleTimeString('fr-FR')}</span>
+        <span>Dernière MAJ: {lastUpdate}</span>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, type ReactNode } from 'react'
-import { X, Minus, Maximize2, GripVertical } from 'lucide-react'
+import { X, Minus, Maximize2, GripVertical, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDashboardStore, type Panel } from '@/lib/dashboard-store'
 
@@ -12,6 +12,27 @@ interface DraggablePanelProps {
 
 export function DraggablePanel({ panel, children }: DraggablePanelProps) {
   const { updatePanel, removePanel, bringToFront, minimizePanel, maximizePanel, unmaximizePanel } = useDashboardStore()
+
+  const handleExport = useCallback(() => {
+    // Collect text content of panel and trigger CSV-like download
+    const panelEl = panelRef.current
+    if (!panelEl) return
+    const rows: string[] = []
+    panelEl.querySelectorAll('table tr').forEach(tr => {
+      const cells = Array.from(tr.querySelectorAll('th, td')).map(td => `"${td.textContent?.replace(/"/g, '""') ?? ''}"`)
+      if (cells.length) rows.push(cells.join(','))
+    })
+    const csv = rows.length
+      ? rows.join('\n')
+      : `"${panel.title}"\n"Données exportées le ${new Date().toLocaleDateString('fr-FR')}"`
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `${panel.title.toLowerCase().replace(/\s+/g, '-')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [panel.title])
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -120,6 +141,13 @@ export function DraggablePanel({ panel, children }: DraggablePanelProps) {
           </span>
         </div>
         <div className="flex items-center gap-1 panel-controls">
+          <button
+            onClick={handleExport}
+            className="p-1 rounded hover:bg-secondary transition-colors"
+            title="Exporter CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
           <button
             onClick={() => minimizePanel(panel.id)}
             className="p-1 rounded hover:bg-secondary transition-colors"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Activity, 
   Bell, 
@@ -20,11 +20,24 @@ import {
 import { cn } from '@/lib/utils'
 import { marketIndices, brvmStocks } from '@/lib/mock-data'
 import { useDashboardStore } from '@/lib/dashboard-store'
+import Link from 'next/link'
 
-export function DashboardHeader() {
+export function DashboardHeader({ onSearchOpen }: { onSearchOpen: () => void }) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications] = useState(3)
   const { setSidebarOpen } = useDashboardStore()
+
+  // ⌘K / Ctrl+K global shortcut
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        onSearchOpen()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onSearchOpen])
 
   // Combine market indices and top stocks for ticker
   const tickerItems = [
@@ -62,43 +75,46 @@ export function DashboardHeader() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-foreground">Bloomfield</h1>
-              <p className="text-[10px] text-muted-foreground">Terminal Pro</p>
+              <p className="text-[10px] text-muted-foreground">Terminal</p>
             </div>
           </div>
 
           {/* Navigation */}
           <nav className="hidden lg:flex items-center gap-1 ml-4">
-            <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
+            <Link href="/terminal/operations" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
               <BarChart3 className="w-4 h-4" />
-              Marchés
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <TrendingUp className="w-4 h-4" />
-              Analyse
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <Newspaper className="w-4 h-4" />
-              Actualités
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <Tv className="w-4 h-4" />
-              Web TV
-            </button>
+              Opérations Boursières
+            </Link>
+            <Link href="/terminal/macro" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              Données Macroéconomiques
+            </Link>
+            <Link href="/terminal/analyse" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              Analyse Financière
+            </Link>
+            <Link href="/terminal/communication" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              Communication & Education
+            </Link>
+            <Link href="/terminal/dashboard" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              Dashboard
+            </Link>
           </nav>
         </div>
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg border border-border/50">
+        {/* Search trigger */}
+        <button
+          onClick={onSearchOpen}
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg border border-border/50 hover:border-border transition-colors"
+        >
           <Search className="w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-40"
-          />
+          <span className="text-sm text-muted-foreground w-40 text-left">Rechercher…</span>
           <kbd className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">⌘K</kbd>
-        </div>
+        </button>
 
         {/* Notifications */}
         <button className="relative p-2 rounded-lg hover:bg-secondary/50 transition-colors">
@@ -180,7 +196,7 @@ export function DashboardHeader() {
               </span>
               <span className={cn(
                 "text-xs font-mono font-semibold",
-                item.isPositive ? "text-primary" : "text-destructive"
+                item.isPositive ? "text-ring" : "text-destructive"
               )}>
                 {item.isPositive ? '+' : ''}{item.change.toFixed(2)}%
               </span>
@@ -195,7 +211,7 @@ export function DashboardHeader() {
               </span>
               <span className={cn(
                 "text-xs font-mono font-semibold",
-                item.isPositive ? "text-primary" : "text-destructive"
+                item.isPositive ? "text-ring" : "text-destructive"
               )}>
                 {item.isPositive ? '+' : ''}{item.change.toFixed(2)}%
               </span>

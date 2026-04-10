@@ -1,16 +1,26 @@
 import { create } from 'zustand'
 
-export type PanelType = 
-  | 'market-overview' 
-  | 'brvm-stocks' 
-  | 'macro-indicators' 
-  | 'stock-chart' 
-  | 'news-feed' 
-  | 'web-tv' 
-  | 'sector-analysis'
-  | 'portfolio'
-  | 'economic-calendar'
+export type PanelType =
+  // Module 1 – Opérations Boursières
+  | 'market-overview'
+  | 'brvm-stocks'
+  | 'stock-chart'
+  | 'top-movers'
+  | 'sector-heatmap'
+  | 'yield-curves'
   | 'currency-rates'
+  | 'commodities'
+  | 'news-feed'
+  | 'web-tv'
+  // Module 2 – Données Macroéconomiques
+  | 'macro-indicators'
+  | 'public-finances'
+  | 'trade-balance'
+  | 'sector-analysis'
+  | 'regional-analysis'
+  | 'economic-calendar'
+  // Module 5 – Dashboard
+  | 'portfolio'
 
 export interface Panel {
   id: string
@@ -256,24 +266,32 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     const { panels, maxZIndex } = get()
     
     // Determine panel dimensions based on type
-    const dimensions = {
-      'market-overview': { width: 400, height: 300 },
-      'brvm-stocks': { width: 500, height: 400 },
-      'stock-chart': { width: 500, height: 400 },
-      'macro-indicators': { width: 400, height: 350 },
-      'sector-analysis': { width: 450, height: 350 },
-      'news-feed': { width: 500, height: 300 },
-      'web-tv': { width: 500, height: 350 },
-      'portfolio': { width: 450, height: 380 },
-      'economic-calendar': { width: 480, height: 400 },
-      'currency-rates': { width: 380, height: 280 },
-    }[type] || { width: 450, height: 350 }
+    const dimensions: Record<PanelType, { width: number; height: number }> = {
+      'market-overview':  { width: 400, height: 300 },
+      'brvm-stocks':      { width: 500, height: 400 },
+      'stock-chart':      { width: 520, height: 400 },
+      'top-movers':       { width: 420, height: 340 },
+      'sector-heatmap':   { width: 460, height: 360 },
+      'yield-curves':     { width: 540, height: 380 },
+      'currency-rates':   { width: 380, height: 280 },
+      'commodities':      { width: 520, height: 400 },
+      'news-feed':        { width: 500, height: 300 },
+      'web-tv':           { width: 500, height: 350 },
+      'macro-indicators': { width: 420, height: 360 },
+      'public-finances':  { width: 520, height: 400 },
+      'trade-balance':    { width: 500, height: 400 },
+      'sector-analysis':  { width: 450, height: 350 },
+      'regional-analysis':{ width: 500, height: 420 },
+      'economic-calendar':{ width: 480, height: 400 },
+      'portfolio':        { width: 450, height: 380 },
+    }
+    const dim = dimensions[type] || { width: 450, height: 350 }
     
     // Find optimal position using auto-layout
     const position = findOptimalPosition(
       panels,
-      dimensions.width,
-      dimensions.height,
+      dim.width,
+      dim.height,
       typeof window !== 'undefined' ? window.innerWidth : 1920,
       typeof window !== 'undefined' ? window.innerHeight : 1080
     )
@@ -284,8 +302,8 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       title,
       x: position.x,
       y: position.y,
-      width: dimensions.width,
-      height: dimensions.height,
+      width: dim.width,
+      height: dim.height,
       isMinimized: false,
       isMaximized: false,
       zIndex: maxZIndex + 1,
