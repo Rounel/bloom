@@ -6,6 +6,7 @@ import {
   Wallet, Calendar, DollarSign, PieChart, Plus, ChevronLeft,
   ChevronRight, X, TrendingUp, Flame, Activity, Package,
   Landmark, ShoppingCart, Map, ChevronDown,
+  BookOpen, Building2, Percent, ShieldAlert, Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDashboardStore, type PanelType } from '@/lib/dashboard-store'
@@ -53,17 +54,28 @@ const modules: NavModule[] = [
     ],
   },
   {
+    id: 'analyse',
+    label: 'Analyse Financière & Risque',
+    items: [
+      { icon: BookOpen,    label: 'Carnet d\'ordres',   panelType: 'order-book',       description: 'Bid/Ask temps réel' },
+      { icon: Building2,   label: 'Fiche Société',      panelType: 'company-profile',  description: 'Fondamentaux & historique' },
+      { icon: Percent,     label: 'Ratios Financiers',  panelType: 'financial-ratios', description: 'P/E, PBR, ROE, Yield…' },
+      { icon: ShieldAlert, label: 'Scorecard Risques',  panelType: 'risk-scorecard',   description: 'Notation souveraine pays' },
+    ],
+  },
+  {
     id: 'dashboard',
     label: 'Dashboard',
     items: [
       { icon: Wallet, label: 'Portefeuille', panelType: 'portfolio', description: 'Suivi investissements' },
+      { icon: Bell,   label: 'Alertes',      panelType: 'alerts-panel', description: 'Alertes prix & marché' },
     ],
   },
 ]
 
 export function DashboardSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(['operations', 'macro', 'dashboard']))
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(['operations', 'macro', 'analyse', 'dashboard']))
   const { addPanel, panels, restorePanel, sidebarOpen, setSidebarOpen } = useDashboardStore()
   const [isMobile, setIsMobile] = useState(false)
 

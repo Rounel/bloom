@@ -21,6 +21,12 @@ export type PanelType =
   | 'economic-calendar'
   // Module 5 – Dashboard
   | 'portfolio'
+  // Panels CDC
+  | 'order-book'
+  | 'company-profile'
+  | 'financial-ratios'
+  | 'risk-scorecard'
+  | 'alerts-panel'
 
 export interface Panel {
   id: string
@@ -284,6 +290,11 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       'regional-analysis':{ width: 500, height: 420 },
       'economic-calendar':{ width: 480, height: 400 },
       'portfolio':        { width: 450, height: 380 },
+      'order-book':       { width: 480, height: 400 },
+      'company-profile':  { width: 500, height: 440 },
+      'financial-ratios': { width: 560, height: 420 },
+      'risk-scorecard':   { width: 440, height: 460 },
+      'alerts-panel':     { width: 420, height: 380 },
     }
     const dim = dimensions[type] || { width: 450, height: 350 }
     

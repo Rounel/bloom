@@ -17,7 +17,10 @@ import {
   LogOut,
   Clock,
   Wifi,
+  Settings,
+  Wallet,
 } from 'lucide-react'
+import { marketIndices, brvmStocks } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
 
 // ─── Module definitions ───────────────────────────────────────────────────────
@@ -43,10 +46,32 @@ const modules: Module[] = [
     description: 'Cotations BRVM en direct, taux souverains, devises et matières premières africaines.',
     icon: TrendingUp,
     href: '/',
-    accentColor: 'bg-emerald-500/15',
-    borderColor:  'hover:border-emerald-500/50 hover:shadow-emerald-500/10',
-    iconColor:    'text-emerald-400',
+    accentColor: 'bg-primary/15',
+    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor:    'text-primary',
     badge: 'Live',
+  },
+  {
+    id: 'portfolio',
+    label: 'Gestion',
+    sublabel: 'Portefeuilles',
+    description: 'Suivi de portefeuille, ordres simulés, métriques de risque et liste de surveillance.',
+    icon: Wallet,
+    href: '/modules/portfolio',
+    accentColor: 'bg-primary/15',
+    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor:    'text-primary',
+  },
+  {
+    id: 'analyse',
+    label: 'Analyse',
+    sublabel: 'Financière & Risque',
+    description: 'Analyse technique avancée (RSI, MACD, Bollinger), ratios fondamentaux et scorecard risques souverains.',
+    icon: LineChart,
+    href: '/modules/analyse',
+    accentColor: 'bg-primary/15',
+    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor:    'text-primary',
   },
   {
     id: 'macro',
@@ -54,43 +79,21 @@ const modules: Module[] = [
     sublabel: 'Macroéconomiques',
     description: 'PIB, inflation, finances publiques, balance commerciale et analyse régionale UEMOA.',
     icon: Globe,
-    href: '/',
-    accentColor: 'bg-blue-500/15',
-    borderColor:  'hover:border-blue-500/50 hover:shadow-blue-500/10',
-    iconColor:    'text-blue-400',
-  },
-  {
-    id: 'analyse',
-    label: 'Analyse',
-    sublabel: 'Financière',
-    description: 'Analyse technique avancée, modélisation de portefeuille et signaux macro-financiers.',
-    icon: LineChart,
-    href: '/',
-    accentColor: 'bg-violet-500/15',
-    borderColor:  'hover:border-violet-500/50 hover:shadow-violet-500/10',
-    iconColor:    'text-violet-400',
+    href: '/modules/macro',
+    accentColor: 'bg-primary/15',
+    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor:    'text-primary',
   },
   {
     id: 'communication',
     label: 'Communication',
     sublabel: '& Éducation',
-    description: 'Actualités en temps réel, alertes critiques, Web TV et décryptages vidéo.',
+    description: 'Actualités en temps réel, alertes critiques, Web TV et espace éducatif.',
     icon: Radio,
-    href: '/',
-    accentColor: 'bg-orange-500/15',
-    borderColor:  'hover:border-orange-500/50 hover:shadow-orange-500/10',
-    iconColor:    'text-orange-400',
-  },
-  {
-    id: 'reporting',
-    label: 'Reporting',
-    sublabel: '& Exports',
-    description: 'Génération de rapports personnalisés, exports Excel, PDF et partage de données.',
-    icon: BarChart3,
-    href: '/',
-    accentColor: 'bg-cyan-500/15',
-    borderColor:  'hover:border-cyan-500/50 hover:shadow-cyan-500/10',
-    iconColor:    'text-cyan-400',
+    href: '/modules/communication',
+    accentColor: 'bg-primary/15',
+    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor:    'text-primary',
   },
   {
     id: 'dashboard',
@@ -98,12 +101,29 @@ const modules: Module[] = [
     sublabel: '& Options',
     description: 'Terminal multi-fenêtres personnalisable. Drag & drop, thèmes et recherche intelligente.',
     icon: LayoutDashboard,
-    href: '/',
+    href: '/modules/dashboard',
     accentColor: 'bg-primary/15',
     borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
     iconColor:    'text-primary',
     badge: 'Nouveau',
   },
+]
+
+
+// Combine market indices and top stocks for ticker
+const tickerItems = [
+  ...marketIndices.map(index => ({
+    label: index.name,
+    value: index.value.toLocaleString('fr-FR', { maximumFractionDigits: 2 }),
+    change: index.changePercent,
+    isPositive: index.change >= 0,
+  })),
+  ...brvmStocks.slice(0, 8).map(stock => ({
+    label: stock.symbol,
+    value: stock.price.toLocaleString('fr-FR'),
+    change: stock.changePercent,
+    isPositive: stock.change >= 0,
+  })),
 ]
 
 // ─── Background network pattern (SVG) ────────────────────────────────────────
@@ -240,48 +260,46 @@ function ModuleCard({ mod }: { mod: Module }) {
     <Link
       href={mod.href}
       className={cn(
-        'group relative flex flex-col items-center text-center gap-5 p-8 rounded-2xl',
-        'bg-card/70 backdrop-blur-sm border border-border/60 transition-all duration-300',
+        'group relative flex flex-row gap-5 rounded-2xl',
+        'bg-card/10 backdrop-blur-sm border border-border/10 transition-all duration-300',
         'hover:-translate-y-1.5 hover:shadow-2xl',
         mod.borderColor,
       )}
     > 
       {/* Badge */}
-      {mod.badge && (
-        <span className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20 uppercase tracking-wider">
+      {/* {mod.badge && (
+        <span className="absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20 uppercase tracking-wider z-20">
           {mod.badge}
         </span>
-      )}
+      )} */}
 
       {/* Icon container – inspired by the screenshot's coloured rounded squares */}
-      <div className={cn(
-        'w-20 h-20 rounded-2xl flex items-center justify-center border transition-all duration-300',
-        mod.accentColor,
-        'border-current/10 group-hover:scale-110 group-hover:shadow-lg',
-      )}>
-        <Icon className={cn('w-10 h-10', mod.iconColor)} strokeWidth={1.5} />
+      <div className='flex justify-center items-center px-2'>
+        <Icon className={cn('size-30', mod.iconColor)} strokeWidth={1.5} />
       </div>
 
-      {/* Label */}
-      <div>
-        <p className="text-base font-black text-foreground leading-tight">{mod.label}</p>
-        <p className={cn('text-sm font-semibold', mod.iconColor)}>{mod.sublabel}</p>
-      </div>
+      <div className="flex flex-col py-8 pr-8">
+        {/* Label */}
+        <div>
+          <p className="text-base md:text-lg lg:text-xl font-black text-gray-800 leading-tight">{mod.label}</p>
+          <p className={cn('text-sm md:text-base lg:text-lg font-semibold', mod.iconColor)}>{mod.sublabel}</p>
+        </div>
 
-      {/* Description */}
-      <p className="text-xs text-muted-foreground leading-relaxed flex-1">
-        {mod.description}
-      </p>
+        {/* Description */}
+        <p className="text-xs md:text-sm lg:text-base text-muted-foreground leading-relaxed flex-1">
+          {mod.description}
+        </p>
+      </div>
 
       {/* CTA */}
-      <div className={cn(
+      {/* <div className={cn(
         'flex items-center gap-1 text-xs font-semibold transition-all duration-200',
         mod.iconColor,
         'opacity-0 group-hover:opacity-100 -translate-y-1 group-hover:translate-y-0',
       )}>
         Accéder
         <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-      </div>
+      </div> */}
     </Link>
   )
 }
@@ -299,6 +317,42 @@ export default function ModulesPage() {
       </div>
 
       <TopBar />
+      
+      {/* Market Ticker Bar with Infinite Scroll */}
+      <div className="h-8 bg-secondary/30 overflow-hidden flex items-center relative">
+        <div className="flex animate-scroll-infinite whitespace-nowrap">
+          {/* First set */}
+          {tickerItems.map((item, index) => (
+            <div key={`first-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
+              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-mono font-semibold text-foreground">
+                {item.value}
+              </span>
+              <span className={cn(
+                "text-xs font-mono font-semibold",
+                item.isPositive ? "text-ring" : "text-destructive"
+              )}>
+                {item.isPositive ? '+' : ''}{item.change.toFixed(2)}%
+              </span>
+            </div>
+          ))}
+          {/* Duplicate set for seamless loop */}
+          {tickerItems.map((item, index) => (
+            <div key={`second-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
+              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-mono font-semibold text-foreground">
+                {item.value}
+              </span>
+              <span className={cn(
+                "text-xs font-mono font-semibold",
+                item.isPositive ? "text-ring" : "text-destructive"
+              )}>
+                {item.isPositive ? '+' : ''}{item.change.toFixed(2)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Main content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 gap-12 bg-white rounded-2xl">
@@ -309,16 +363,16 @@ export default function ModulesPage() {
             <Shield className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-bold text-primary tracking-wider uppercase">Plateforme certifiée BRVM</span>
           </div> */}
-          <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">
+          {/* <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">
             Modules
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-md">
+          </h1> */}
+          <p className="text-sm text-muted-foreground ">
             Sélectionnez un module pour accéder à vos outils d'analyse des marchés financiers africains.
           </p>
         </div>
 
         {/* Module grid – 3 columns on md+, 2 on sm, 1 on xs */}
-        <div className="w-full max-w-5xl grid grid-cols-3 gap-5">
+        <div className="w-full max-w-7xl grid grid-cols-3 gap-5">
           {modules.map(mod => (
             <ModuleCard key={mod.id} mod={mod} />
           ))}

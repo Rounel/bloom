@@ -18,6 +18,11 @@ import { SectorAnalysisPanel }   from './panels/sector-analysis'
 import { RegionalAnalysisPanel } from './panels/regional-analysis'
 import { EconomicCalendarPanel } from './panels/economic-calendar'
 import { PortfolioPanel }        from './panels/portfolio'
+import { OrderBookPanel }        from './panels/order-book'
+import { CompanyProfilePanel }   from './panels/company-profile'
+import { FinancialRatiosPanel }  from './panels/financial-ratios'
+import { RiskScorecardPanel }    from './panels/risk-scorecard'
+import { AlertsPanel }           from './panels/alerts-panel'
 
 export function getPanelContent(panel: Panel) {
   switch (panel.type) {
@@ -38,6 +43,11 @@ export function getPanelContent(panel: Panel) {
     case 'regional-analysis': return <RegionalAnalysisPanel />
     case 'economic-calendar': return <EconomicCalendarPanel />
     case 'portfolio':         return <PortfolioPanel />
+    case 'order-book':        return <OrderBookPanel />
+    case 'company-profile':   return <CompanyProfilePanel />
+    case 'financial-ratios':  return <FinancialRatiosPanel />
+    case 'risk-scorecard':    return <RiskScorecardPanel />
+    case 'alerts-panel':      return <AlertsPanel />
     default:
       return <div className="text-muted-foreground text-sm">Module non disponible</div>
   }
