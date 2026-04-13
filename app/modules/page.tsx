@@ -19,9 +19,22 @@ import {
   Wifi,
   Settings,
   Wallet,
+  Sun,
+  Moon,
+  UserCircle,
+  KeyRound,
+  HelpCircle,
 } from 'lucide-react'
 import { marketIndices, brvmStocks } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu'
 
 // ─── Module definitions ───────────────────────────────────────────────────────
 
@@ -45,19 +58,19 @@ const modules: Module[] = [
     sublabel: 'Boursières',
     description: 'Cotations BRVM en direct, taux souverains, devises et matières premières africaines.',
     icon: TrendingUp,
-    href: '/',
+    href: '/terminal/operations',
     accentColor: 'bg-primary/15',
     borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
     iconColor:    'text-primary',
     badge: 'Live',
   },
   {
-    id: 'portfolio',
-    label: 'Gestion',
-    sublabel: 'Portefeuilles',
-    description: 'Suivi de portefeuille, ordres simulés, métriques de risque et liste de surveillance.',
-    icon: Wallet,
-    href: '/modules/portfolio',
+    id: 'macro',
+    label: 'Données',
+    sublabel: 'Macroéconomiques',
+    description: 'PIB, inflation, finances publiques, balance commerciale et analyse régionale UEMOA.',
+    icon: Globe,
+    href: '/terminal/macro',
     accentColor: 'bg-primary/15',
     borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
     iconColor:    'text-primary',
@@ -68,18 +81,7 @@ const modules: Module[] = [
     sublabel: 'Financière & Risque',
     description: 'Analyse technique avancée (RSI, MACD, Bollinger), ratios fondamentaux et scorecard risques souverains.',
     icon: LineChart,
-    href: '/modules/analyse',
-    accentColor: 'bg-primary/15',
-    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
-    iconColor:    'text-primary',
-  },
-  {
-    id: 'macro',
-    label: 'Données',
-    sublabel: 'Macroéconomiques',
-    description: 'PIB, inflation, finances publiques, balance commerciale et analyse régionale UEMOA.',
-    icon: Globe,
-    href: '/modules/macro',
+    href: '/terminal/analyse',
     accentColor: 'bg-primary/15',
     borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
     iconColor:    'text-primary',
@@ -90,7 +92,7 @@ const modules: Module[] = [
     sublabel: '& Éducation',
     description: 'Actualités en temps réel, alertes critiques, Web TV et espace éducatif.',
     icon: Radio,
-    href: '/modules/communication',
+    href: '/terminal/communication',
     accentColor: 'bg-primary/15',
     borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
     iconColor:    'text-primary',
@@ -101,11 +103,22 @@ const modules: Module[] = [
     sublabel: '& Options',
     description: 'Terminal multi-fenêtres personnalisable. Drag & drop, thèmes et recherche intelligente.',
     icon: LayoutDashboard,
-    href: '/modules/dashboard',
+    href: '/terminal/dashboard',
     accentColor: 'bg-primary/15',
     borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
     iconColor:    'text-primary',
     badge: 'Nouveau',
+  },
+  {
+    id: 'settings',
+    label: 'Paramètrage',
+    sublabel: 'Compte & Préférences',
+    description: 'Gérez votre compte, vos préférences et vos paramètres de sécurité.',
+    icon: Settings,
+    href: '/terminal/settings',
+    accentColor: 'bg-primary/15',
+    borderColor:  'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor:    'text-primary',
   },
 ]
 
@@ -189,6 +202,7 @@ function NetworkBackground() {
 
 function TopBar() {
   const [time, setTime] = useState('')
+  const [isDark, setIsDark] = useState(true)
 
   useEffect(() => {
     const tick = () => setTime(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
@@ -197,56 +211,106 @@ function TopBar() {
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    const html = document.documentElement
+    if (isDark) {
+      html.classList.add('dark')
+    } else {
+      html.classList.remove('dark')
+    }
+  }, [isDark])
+
   return (
-    <header className="relative z-10 h-14 border-b border-border/50 backdrop-blur-md flex items-center px-6">
+    <header className="relative z-10 h-14 border-b border-border/50 bg-[#1c3557] backdrop-blur-md flex items-center px-6">
       {/* Logo */}
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
-          <Activity className="w-4.5 h-4.5 text-primary-foreground" style={{ width: '1.125rem', height: '1.125rem' }} />
+          <p className="text-lg text-white">B</p>
         </div>
         <div>
-          <span className="text-sm font-black text-foreground leading-none block">Bloomfield</span>
-          <span className="text-[9px] text-muted-foreground font-medium tracking-widest uppercase leading-none block mt-0.5">Terminal</span>
+          <span className="text-sm lg:text-lg font-black text-white leading-none block">Bloomfield Terminal</span>
         </div>
       </div>
 
       {/* Center title */}
       <div className="absolute left-1/2 -translate-x-1/2 text-center">
-        <span className="text-sm font-black text-foreground tracking-[0.2em] uppercase">MODULES</span>
+        <span className="text-sm font-black text-white tracking-[0.2em] uppercase">MODULES</span>
       </div>
 
       {/* Right controls */}
       <div className="ml-auto flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-lg border border-border/50">
-          <Wifi className="w-3 h-3 text-emerald-500" />
-          <span>Connecté</span>
-          <span className="mx-1 text-border">|</span>
-          <Clock className="w-3 h-3" />
-          <span className="font-mono">{time}</span>
-        </div>
 
-        <button className="relative p-2 rounded-lg hover:bg-secondary/50 transition-colors">
-          <Bell className="w-4 h-4 text-muted-foreground" />
+        {/* Notification bell */}
+        <button className="relative p-2 rounded-lg hover:bg-white/10 transition-colors">
+          <Bell className="w-4 h-4 text-white/70" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
         </button>
 
-        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer">
-          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-            <User className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <div className="hidden md:block text-left">
-            <span className="text-xs font-semibold text-foreground block leading-none">Amadou Diallo</span>
-            <span className="text-[10px] text-muted-foreground">Pro · BRVM</span>
-          </div>
-        </div>
-
-        <Link
-          href="/auth/sign-in"
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-border/50 transition-colors"
+        {/* Theme toggle */}
+        <button
+          onClick={() => setIsDark(prev => !prev)}
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
         >
-          <LogOut className="w-3.5 h-3.5" />
-          Déconnexion
-        </Link>
+          {isDark
+            ? <Sun className="w-4 h-4 text-white/70" />
+            : <Moon className="w-4 h-4 text-white/70" />
+          }
+        </button>
+
+        {/* User dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
+              <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="hidden md:block text-left">
+                <span className="text-xs font-semibold text-white block leading-none">Amadou Diallo</span>
+                <span className="text-[10px] text-white/60">Pro · BRVM</span>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuLabel className="flex flex-col">
+              <span className="font-semibold">Amadou Diallo</span>
+              <span className="text-[10px] font-normal text-muted-foreground">amadou.diallo@brvm.org</span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/modules/profile" className="flex items-center gap-2 cursor-pointer">
+                <UserCircle className="w-4 h-4" />
+                Mon profil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/modules/settings" className="flex items-center gap-2 cursor-pointer">
+                <Settings className="w-4 h-4" />
+                Paramètres
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/modules/security" className="flex items-center gap-2 cursor-pointer">
+                <KeyRound className="w-4 h-4" />
+                Sécurité
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/help" className="flex items-center gap-2 cursor-pointer">
+                <HelpCircle className="w-4 h-4" />
+                Aide
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/auth/sign-in" className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+                <LogOut className="w-4 h-4" />
+                Déconnexion
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
       </div>
     </header>
   )
@@ -261,7 +325,7 @@ function ModuleCard({ mod }: { mod: Module }) {
       href={mod.href}
       className={cn(
         'group relative flex flex-row gap-5 rounded-2xl',
-        'bg-card/10 backdrop-blur-sm border border-border/10 transition-all duration-300',
+        'bg-card backdrop-blur-sm border border-border transition-all duration-300',
         'hover:-translate-y-1.5 hover:shadow-2xl',
         mod.borderColor,
       )}
@@ -319,13 +383,13 @@ export default function ModulesPage() {
       <TopBar />
       
       {/* Market Ticker Bar with Infinite Scroll */}
-      <div className="h-8 bg-secondary/30 overflow-hidden flex items-center relative">
+      <div className="h-8 bg-[#0f2035] overflow-hidden flex items-center relative">
         <div className="flex animate-scroll-infinite whitespace-nowrap">
           {/* First set */}
           {tickerItems.map((item, index) => (
             <div key={`first-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
-              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-mono font-semibold text-foreground">
+              <span className="text-xs font-bold text-primary">{item.label}</span>
+              <span className="text-xs font-mono font-semibold text-white">
                 {item.value}
               </span>
               <span className={cn(
@@ -339,8 +403,8 @@ export default function ModulesPage() {
           {/* Duplicate set for seamless loop */}
           {tickerItems.map((item, index) => (
             <div key={`second-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
-              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-mono font-semibold text-foreground">
+              <span className="text-xs font-medium text-primary">{item.label}</span>
+              <span className="text-xs font-mono font-semibold text-white">
                 {item.value}
               </span>
               <span className={cn(
@@ -355,7 +419,7 @@ export default function ModulesPage() {
       </div>
 
       {/* Main content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 gap-12 bg-white rounded-2xl">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 gap-12 bg-background">
 
         {/* Page title – mirroring "ADMINISTRATION" from the screenshot */}
         <div className="text-center space-y-3">
@@ -394,7 +458,7 @@ export default function ModulesPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border/30 py-3 px-6 flex items-center justify-between text-[10px] text-muted-foreground bg-card/30 backdrop-blur-sm">
+      <footer className="relative z-10 border-t border-border/30 bg-[#1c3557] py-3 px-6 flex items-center justify-between text-[10px] text-white backdrop-blur-sm">
         <span>© 2026 Bloomfield Terminal</span>
         <span>Données financières africaines professionnelles · v2.4.1</span>
       </footer>

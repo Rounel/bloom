@@ -22,8 +22,8 @@ interface FormState {
 // ─── Mock credentials ─────────────────────────────────────────────────────────
 
 const VALID_USERS = [
-  { email: 'demo@bloomfield.com',  password: 'Demo@1234',  name: 'Amadou Diallo', otp: '847291' },
-  { email: 'admin@bloomfield.com', password: 'Admin@2024', name: 'Fatou Ndiaye',  otp: '362815' },
+  { email: 'demo@bloomfield.com',  password: 'Demo@1234',  name: 'Amadou Diallo', otp: '000000' },
+  { email: 'admin@bloomfield.com', password: 'Admin@2024', name: 'Fatou Ndiaye',  otp: '000000' },
 ]
 
 // ─── CAPTCHA ──────────────────────────────────────────────────────────────────
@@ -80,9 +80,10 @@ function CaptchaWidget({ onVerified }: { onVerified: () => void }) {
     if (state !== 'idle' && state !== 'error') return
     setState('verifying')
     setTimeout(() => {
-      setState('challenge')
       setTiles(initTiles())
       setSubmitError(false)
+      setState('verified')
+      onVerified()
     }, 1800)
   }
 
@@ -146,7 +147,7 @@ function CaptchaWidget({ onVerified }: { onVerified: () => void }) {
                 <div key={i} className="w-2 h-2 rounded-sm" style={{ backgroundColor: c }} />
               ))}
             </div>
-            <span className="text-[8px] text-muted-foreground font-bold tracking-wider">BLOOMCAPTCHA</span>
+            <span className="text-[8px] text-muted-foreground font-bold tracking-wider">CAPTCHA</span>
           </div>
         </div>
       )}
@@ -299,7 +300,7 @@ function OTPInput({ length = 6, onComplete, disabled }: {
 
 function BrandPanel() {
   return (
-    <div className="hidden lg:flex flex-col justify-between h-full p-10 bg-gradient-to-br from-background via-background to-primary/5 border-r border-border overflow-hidden relative">
+    <div className="hidden lg:flex flex-col justify-between h-full bg-[url('/sign-in-bg.jpg')] object-cover object-center from-background via-background to-primary/5 border-r border-border overflow-hidden relative">
       {/* Subtle grid background */}
       <div
         className="absolute inset-0 opacity-[0.03]"
@@ -310,25 +311,28 @@ function BrandPanel() {
       />
 
       {/* Logo */}
-      <div className="relative flex items-center gap-3">
+      <div className="relative flex items-center gap-3 p-10">
         <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-          <Activity className="w-6 h-6 text-primary-foreground" />
+          <p className="text-3xl text-primary-foreground font-bold">B</p>
         </div>
         <div>
-          <h1 className="text-lg font-black text-foreground">Bloomfield</h1>
-          <p className="text-xs text-muted-foreground">Terminal Financier</p>
+          <h1 className="text-lg md:text-lg lg:text-3xl font-black text-white">
+            Bloomfield
+            {' '}
+            <span className="text-lg md:text-lg lg:text-3xl font-black text-primary">Terminal</span>
+          </h1>
         </div>
       </div>
 
       {/* Hero content */}
-      <div className="relative space-y-8">
+      <div className="relative space-y-8 bg-linear-to-t from-black via-black/60 to-transparent p-10">
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-bold text-primary">Données en temps réel · BRVM</span>
-          </div>
+          </div> */}
 
-          <h2 className="text-4xl font-black text-foreground leading-tight">
+          <h2 className="text-4xl lg:text-7xl font-black text-white leading-tight">
             La référence<br />des{' '}
             <span className="relative">
               <span className="relative z-10">marchés africains</span>
@@ -336,14 +340,14 @@ function BrandPanel() {
             </span>
           </h2>
 
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+          <p className="text-sm lg:text-2xl text-gray-300 leading-relaxed max-w-">
             Accédez aux cotations BRVM, indicateurs macroéconomiques et analyses régionales
             de l'Afrique de l'Ouest depuis un terminal professionnel unifié.
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* <div className="grid grid-cols-3 gap-3">
           {[
             { v: '45+',    l: 'Valeurs cotées' },
             { v: '8',      l: 'Pays couverts'  },
@@ -354,10 +358,10 @@ function BrandPanel() {
               <div className="text-[10px] text-muted-foreground mt-0.5">{s.l}</div>
             </div>
           ))}
-        </div>
+        </div> */}
 
         {/* Decorative mini chart */}
-        <div className="relative rounded-xl bg-secondary/20 border border-border/50 p-4 overflow-hidden">
+        {/* <div className="relative rounded-xl bg-secondary/20 border border-border/50 p-4 overflow-hidden">
           <div className="text-[10px] text-muted-foreground font-medium mb-2">BRVM Composite – 30j</div>
           <svg viewBox="0 0 220 56" className="w-full" preserveAspectRatio="none">
             <defs>
@@ -378,12 +382,13 @@ function BrandPanel() {
             />
           </svg>
           <div className="absolute top-3 right-4 text-xs font-mono font-bold text-emerald-500">+8.5% YTD</div>
-        </div>
+        </div> */}
+
+        <p className="relative text-[11px] text-gray-400">
+          © 2026 Bloomfield Terminal · Données financières africaines professionnelles
+        </p>
       </div>
 
-      <p className="relative text-[10px] text-muted-foreground">
-        © 2026 Bloomfield Terminal · Données financières africaines professionnelles
-      </p>
     </div>
   )
 }
@@ -447,7 +452,7 @@ export default function SignInPage() {
   }, [matched, router])
 
   const inputBase = cn(
-    'w-full px-4 py-3 rounded-xl border bg-secondary/30 text-sm text-foreground',
+    'w-full px-4 py-3 rounded-xl border border-muted-foreground bg-secondary/10 text-sm text-foreground',
     'placeholder:text-muted-foreground outline-none transition-all duration-200',
     'focus:border-primary focus:bg-secondary/50',
   )
@@ -456,7 +461,7 @@ export default function SignInPage() {
   const stepIdx = STEPS.indexOf(step)
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1fr_1fr]">
+    <div className="min-h-screen grid lg:grid-cols-[2fr_1fr]">
       <BrandPanel />
 
       {/* ── Right panel */}
@@ -484,15 +489,15 @@ export default function SignInPage() {
               </div>
 
               <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4 shadow-sm">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground border-b border-border/50 pb-3">
+                {/* <div className="flex items-center gap-2 text-xs text-muted-foreground border-b border-border/50 pb-3">
                   <Shield className="w-4 h-4 text-primary shrink-0" />
                   <span>Protection BloomCAPTCHA contre les accès automatisés</span>
-                </div>
+                </div> */}
                 <CaptchaWidget onVerified={handleCaptchaVerified} />
               </div>
 
               <p className="text-center text-[11px] text-muted-foreground">
-                Ce site est protégé par BloomCAPTCHA.{' '}
+                Ce site est protégé par CAPTCHA.{' '}
                 <span className="underline cursor-pointer hover:text-foreground transition-colors">
                   Politique de confidentialité
                 </span>{' '}et{' '}
@@ -532,7 +537,7 @@ export default function SignInPage() {
               <form onSubmit={handleCredentials} className="space-y-4">
                 {/* Email */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <label className="text-xs font-bold text-foreground uppercase tracking-wider">
                     Adresse e-mail
                   </label>
                   <div className="relative">
@@ -552,7 +557,7 @@ export default function SignInPage() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <label className="text-xs font-bold text-foreground uppercase tracking-wider">
                       Mot de passe
                     </label>
                     <button type="button" className="text-xs text-primary hover:underline transition-colors">
@@ -644,14 +649,14 @@ export default function SignInPage() {
 
               {/* Icon + heading */}
               <div className="space-y-3 text-center">
-                <div className="relative inline-flex">
+                {/* <div className="relative inline-flex">
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-inner">
                     <Smartphone className="w-8 h-8 text-primary" />
                   </div>
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
                     <Shield className="w-3 h-3 text-white" />
                   </div>
-                </div>
+                </div> */}
                 <div>
                   <h2 className="text-2xl font-black text-foreground">Double authentification</h2>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -661,7 +666,7 @@ export default function SignInPage() {
               </div>
 
               {/* Demo OTP hint */}
-              <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3.5 text-center">
+              {/* <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3.5 text-center">
                 <p className="text-xs font-bold text-primary mb-1.5">Code de démonstration</p>
                 <div className="flex items-center justify-center gap-1">
                   {matched?.otp.split('').map((d, i) => (
@@ -679,7 +684,7 @@ export default function SignInPage() {
                 <p className="text-[10px] text-muted-foreground mt-2">
                   Valide 30 secondes · TOTP RFC 6238
                 </p>
-              </div>
+              </div> */}
 
               {/* OTP input */}
               <div className="space-y-4">
@@ -751,7 +756,7 @@ export default function SignInPage() {
           )}
 
           {/* Step progress indicator */}
-          {step !== 'success' && (
+          {/* {step !== 'success' && (
             <div className="flex items-center justify-center gap-2">
               {STEPS.map((s, i) => (
                 <div
@@ -765,7 +770,7 @@ export default function SignInPage() {
                 />
               ))}
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
