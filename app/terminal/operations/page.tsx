@@ -8,7 +8,8 @@ import {
 import {
   TrendingUp, TrendingDown, BarChart2, DollarSign,
   Newspaper, Tv, Globe, Activity, AlertTriangle,
-  ChevronUp, ChevronDown, Minus, Radio,
+  ChevronUp, ChevronDown, Radio, Package, Flame,
+  ChevronLeft, ChevronRight, LayoutGrid, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -17,22 +18,99 @@ import {
   sovereignYields, generateStockHistory,
 } from '@/lib/mock-data'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Section IDs ──────────────────────────────────────────────────────────────
 
-type TabId = 'marches' | 'taux' | 'devises' | 'matieres' | 'performances' | 'flashinfo'
-type CommodityPeriod = 'jour' | 'semaine' | 'mois'
+type SectionId =
+  | 'indices-africains'
+  | 'cours-brvm'
+  | 'heatmap-sectorielle'
+  | 'cotations-brvm'
+  | 'courbes-taux'
+  | 'spreads-maturite'
+  | 'devises-graphique'
+  | 'devises-tableau'
+  | 'matieres-prix'
+  | 'matieres-perf'
+  | 'top-movers'
+  | 'most-traded'
+  | 'sector-trends'
+  | 'flash-alerts'
+  | 'actualites'
+  | 'web-tv'
+
+interface SidebarItem {
+  id: SectionId
+  label: string
+  description: string
+  icon: React.ElementType
+}
+
+interface SidebarGroup {
+  id: string
+  label: string
+  icon: React.ElementType
+  items: SidebarItem[]
+}
+
+const SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    id: 'marches', label: 'Marchés Boursiers', icon: BarChart2,
+    items: [
+      { id: 'indices-africains',   label: 'Indices Africains',    description: 'BRVM, NGX, GSE, JSE',        icon: Globe },
+      { id: 'cours-brvm',          label: 'Cours & Graphique',    description: 'Intraday sélectionné',        icon: LineChart },
+      { id: 'heatmap-sectorielle', label: 'Heatmap Sectorielle',  description: 'Performance par secteur',     icon: Flame },
+      { id: 'cotations-brvm',      label: 'Cotations BRVM',       description: 'Tableau temps réel + sparklines', icon: Activity },
+    ],
+  },
+  {
+    id: 'taux', label: 'Taux Souverains', icon: Activity,
+    items: [
+      { id: 'courbes-taux',    label: 'Courbes des Taux',      description: 'UEMOA multi-pays',           icon: TrendingUp },
+      { id: 'spreads-maturite', label: 'Spreads par Maturité', description: 'Points de base vs CI',        icon: BarChart2 },
+    ],
+  },
+  {
+    id: 'devises', label: 'Devises', icon: DollarSign,
+    items: [
+      { id: 'devises-graphique', label: 'Paires & Graphique',  description: 'Historique 60 jours',        icon: TrendingUp },
+      { id: 'devises-tableau',   label: 'Tableau des Paires',  description: 'Toutes les paires FX',       icon: BarChart2 },
+    ],
+  },
+  {
+    id: 'matieres', label: 'Matières Premières', icon: Package,
+    items: [
+      { id: 'matieres-prix',  label: 'Prix Spot',              description: 'Cacao, pétrole, or…',        icon: Package },
+      { id: 'matieres-perf',  label: 'Perf. par Catégorie',   description: 'Agricole, énergie, métaux',   icon: BarChart2 },
+    ],
+  },
+  {
+    id: 'performances', label: 'Performances Marchés', icon: TrendingUp,
+    items: [
+      { id: 'top-movers',    label: 'Top Hausses / Baisses',  description: 'Meilleures & pires perf.',    icon: TrendingUp },
+      { id: 'most-traded',   label: 'Plus Échangés',          description: 'Volumes du jour',             icon: Activity },
+      { id: 'sector-trends', label: 'Tendances Sectorielles', description: 'Perf. par secteur',           icon: Flame },
+    ],
+  },
+  {
+    id: 'flashinfo', label: 'Flash Info & Web TV', icon: Radio,
+    items: [
+      { id: 'flash-alerts', label: 'Alertes Flash',    description: 'Actualités critiques',         icon: AlertTriangle },
+      { id: 'actualites',   label: 'Actualités',       description: 'Fil d\'informations en direct', icon: Newspaper },
+      { id: 'web-tv',       label: 'Web TV',           description: 'Programmes & décryptages',      icon: Tv },
+    ],
+  },
+]
+
+const DEFAULT_SECTIONS: SectionId[] = ['indices-africains', 'cotations-brvm', 'top-movers', 'actualites']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number, dec = 2) {
   return n.toLocaleString('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec })
 }
-
 function pct(n: number) {
-  const sign = n >= 0 ? '+' : ''
-  return `${sign}${fmt(n)}%`
+  return `${n >= 0 ? '+' : ''}${fmt(n)}%`
 }
-
 function ChangeChip({ value, size = 'sm' }: { value: number; size?: 'xs' | 'sm' }) {
   const pos = value >= 0
   return (
@@ -47,745 +125,751 @@ function ChangeChip({ value, size = 'sm' }: { value: number; size?: 'xs' | 'sm' 
   )
 }
 
+function SectionCard({ id, onClose, children }: { id: SectionId; onClose: (id: SectionId) => void; children: React.ReactNode }) {
+  return (
+    <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
+      <div className="flex items-center justify-end px-3 py-1.5 border-b border-border/50 bg-secondary/10">
+        <button onClick={() => onClose(id)} className="p-0.5 rounded hover:bg-secondary/70 text-muted-foreground hover:text-foreground transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="flex-1 overflow-auto">
+        {children}
+      </div>
+    </div>
+  )
+}
+
 // ─── Sparkline ────────────────────────────────────────────────────────────────
 
 function Sparkline({ basePrice, positive }: { basePrice: number; positive: boolean }) {
   const data = useMemo(() => generateStockHistory(basePrice, 14), [basePrice])
   return (
-    <ResponsiveContainer width={80} height={28}>
-      <LineChart data={data}>
-        <Line
-          type="monotone"
-          dataKey="close"
-          dot={false}
-          strokeWidth={1.5}
-          stroke={positive ? '#34d399' : '#f87171'}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <LineChart width={80} height={28} data={data}>
+      <Line type="monotone" dataKey="close" dot={false} strokeWidth={1.5} stroke={positive ? '#34d399' : '#f87171'} />
+    </LineChart>
   )
 }
 
-// ─── Tab bar ──────────────────────────────────────────────────────────────────
+// ─── Section components ───────────────────────────────────────────────────────
 
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: 'marches',      label: 'Marchés Boursiers',      icon: BarChart2 },
-  { id: 'taux',         label: 'Taux Souverains',         icon: Activity },
-  { id: 'devises',      label: 'Devises',                 icon: DollarSign },
-  { id: 'matieres',     label: 'Matières Premières',      icon: Globe },
-  { id: 'performances', label: 'Performances',            icon: TrendingUp },
-  { id: 'flashinfo',    label: 'Flash Info & Web TV',     icon: Radio },
-]
-
-// ─── Section 1 — Marchés Boursiers ───────────────────────────────────────────
-
-function MarchesTab() {
-  const [selectedStock, setSelectedStock] = useState(brvmStocks[0])
-  const history = useMemo(() => generateStockHistory(selectedStock.price, 60), [selectedStock.price])
-
-  const heatmapMax = Math.max(...sectorPerformance.map(s => Math.abs(s.performance)))
-
+function IndicesAfricains() {
   return (
-    <div className="space-y-6">
-      {/* Indices africains */}
-      <section>
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Indices Africains</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {marketIndices.map(idx => (
-            <div key={idx.name} className="bg-card border border-border rounded-lg p-3">
-              <p className="text-[10px] text-muted-foreground truncate">{idx.name}</p>
-              <p className="text-sm font-bold text-foreground mt-0.5 font-mono">{fmt(idx.value)}</p>
-              <ChangeChip value={idx.changePercent} />
-              <p className="text-[10px] text-muted-foreground mt-1">YTD <span className={idx.yearToDate >= 0 ? 'text-emerald-400' : 'text-red-400'}>{pct(idx.yearToDate)}</span></p>
-            </div>
-          ))}
+    <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {marketIndices.map(idx => (
+        <div key={idx.name} className="bg-secondary/20 rounded-lg p-3">
+          <p className="text-[10px] text-muted-foreground truncate">{idx.name}</p>
+          <p className="text-sm font-bold text-foreground mt-0.5 font-mono">{fmt(idx.value)}</p>
+          <ChangeChip value={idx.changePercent} />
+          <p className="text-[10px] text-muted-foreground mt-1">YTD <span className={idx.yearToDate >= 0 ? 'text-emerald-400' : 'text-red-400'}>{pct(idx.yearToDate)}</span></p>
         </div>
-      </section>
-
-      {/* Stock chart + table */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Chart */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <span className="text-sm font-bold text-foreground">{selectedStock.symbol}</span>
-              <span className="ml-2 text-xs text-muted-foreground">{selectedStock.name}</span>
-            </div>
-            <ChangeChip value={selectedStock.changePercent} />
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={history}>
-              <defs>
-                <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={selectedStock.change >= 0 ? '#34d399' : '#f87171'} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={selectedStock.change >= 0 ? '#34d399' : '#f87171'} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
-              <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} domain={['auto', 'auto']} width={55} tickFormatter={v => v.toLocaleString('fr-FR')} />
-              <Tooltip
-                contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
-                formatter={(v: number) => [v.toLocaleString('fr-FR') + ' XOF', 'Cours']}
-                labelStyle={{ color: 'var(--muted-foreground)' }}
-              />
-              <Area type="monotone" dataKey="close" stroke={selectedStock.change >= 0 ? '#34d399' : '#f87171'} fill="url(#priceGrad)" strokeWidth={1.5} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Sector Heatmap */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Heatmap Sectorielle</h3>
-          <div className="space-y-2">
-            {sectorPerformance.map(s => {
-              const intensity = Math.abs(s.performance) / heatmapMax
-              const pos = s.performance >= 0
-              return (
-                <div key={s.sector} className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-foreground truncate pr-2">{s.sector}</span>
-                    <ChangeChip value={s.performance} size="xs" />
-                  </div>
-                  <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={cn('h-full rounded-full transition-all', pos ? 'bg-emerald-500' : 'bg-red-500')}
-                      style={{ width: `${intensity * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className="mt-4 pt-3 border-t border-border space-y-1">
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Capitalisation (Mrd XOF)</p>
-            {sectorPerformance.map(s => (
-              <div key={s.sector} className="flex justify-between text-[10px]">
-                <span className="text-muted-foreground truncate">{s.sector}</span>
-                <span className="font-mono text-foreground">{(s.marketCap / 1e12).toFixed(2)} T</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* BRVM Cotations */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Cotations BRVM en Direct</h3>
-          <span className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 animate-pulse">● Live</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                {['Symbole', 'Nom', 'Cours (XOF)', 'Var.', 'Var.%', 'Volume', 'Pays', 'Secteur', '60j'].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {brvmStocks.map((s, i) => (
-                <tr
-                  key={s.symbol}
-                  onClick={() => setSelectedStock(s)}
-                  className={cn(
-                    'border-b border-border/50 cursor-pointer transition-colors',
-                    selectedStock.symbol === s.symbol ? 'bg-primary/5' : i % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10',
-                    'hover:bg-primary/5',
-                  )}
-                >
-                  <td className="px-3 py-2 font-bold text-foreground font-mono">{s.symbol}</td>
-                  <td className="px-3 py-2 text-foreground truncate max-w-[120px]">{s.name}</td>
-                  <td className="px-3 py-2 font-mono font-semibold text-foreground">{s.price.toLocaleString('fr-FR')}</td>
-                  <td className={cn('px-3 py-2 font-mono', s.change >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                    {s.change >= 0 ? '+' : ''}{s.change.toLocaleString('fr-FR')}
-                  </td>
-                  <td className="px-3 py-2"><ChangeChip value={s.changePercent} size="xs" /></td>
-                  <td className="px-3 py-2 font-mono text-muted-foreground">{s.volume.toLocaleString('fr-FR')}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{s.country}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{s.sector}</td>
-                  <td className="px-3 py-2">
-                    <Sparkline basePrice={s.price} positive={s.change >= 0} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      ))}
     </div>
   )
 }
 
-// ─── Section 2 — Taux Souverains ─────────────────────────────────────────────
-
-const YIELD_COLORS: Record<string, string> = {
-  CI: '#3b82f6', SN: '#22c55e', BF: '#f59e0b', ML: '#ef4444', BJ: '#a855f7',
+function CoursBRVM() {
+  const [selected, setSelected] = useState(brvmStocks[0])
+  const history = useMemo(() => generateStockHistory(selected.price, 60), [selected.price])
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex flex-wrap gap-1.5">
+        {brvmStocks.map(s => (
+          <button key={s.symbol} onClick={() => setSelected(s)}
+            className={cn('text-xs px-2 py-1 rounded border transition-colors font-mono', selected.symbol === s.symbol ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:bg-secondary/50')}>
+            {s.symbol}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-sm font-bold text-foreground">{selected.symbol}</span>
+          <span className="ml-2 text-xs text-muted-foreground">{selected.name}</span>
+        </div>
+        <ChangeChip value={selected.changePercent} />
+      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={history}>
+          <defs>
+            <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={selected.change >= 0 ? '#34d399' : '#f87171'} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={selected.change >= 0 ? '#34d399' : '#f87171'} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
+          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
+          <YAxis tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} domain={['auto', 'auto']} width={55} tickFormatter={v => v.toLocaleString('fr-FR')} />
+          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+            formatter={(v: number) => [v.toLocaleString('fr-FR') + ' XOF', 'Cours']} labelStyle={{ color: 'var(--muted-foreground)' }} />
+          <Area type="monotone" dataKey="close" stroke={selected.change >= 0 ? '#34d399' : '#f87171'} fill="url(#cGrad)" strokeWidth={1.5} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
 }
 
-function TauxTab() {
+function HeatmapSectorielle() {
+  const max = Math.max(...sectorPerformance.map(s => Math.abs(s.performance)))
+  return (
+    <div className="p-4 space-y-3">
+      {sectorPerformance.map(s => {
+        const intensity = Math.abs(s.performance) / max
+        const pos = s.performance >= 0
+        return (
+          <div key={s.sector} className="space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-foreground truncate pr-2">{s.sector}</span>
+              <ChangeChip value={s.performance} size="xs" />
+            </div>
+            <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+              <div className={cn('h-full rounded-full', pos ? 'bg-emerald-500' : 'bg-red-500')} style={{ width: `${intensity * 100}%` }} />
+            </div>
+            <p className="text-[10px] text-muted-foreground">Cap. {(s.marketCap / 1e12).toFixed(2)} T XOF · {s.numberOfStocks} valeur(s)</p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function CotationsBRVM() {
+  const [selected, setSelected] = useState(brvmStocks[0].symbol)
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border bg-secondary/30">
+            {['Symbole', 'Nom', 'Cours', 'Var.', 'Var.%', 'Volume', 'Pays', '14j'].map(h => (
+              <th key={h} className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {brvmStocks.map((s, i) => (
+            <tr key={s.symbol} onClick={() => setSelected(s.symbol)}
+              className={cn('border-b border-border/50 cursor-pointer transition-colors hover:bg-primary/5',
+                selected === s.symbol ? 'bg-primary/5' : i % 2 === 0 ? '' : 'bg-secondary/10')}>
+              <td className="px-3 py-2 font-bold text-foreground font-mono">{s.symbol}</td>
+              <td className="px-3 py-2 text-foreground truncate max-w-[120px]">{s.name}</td>
+              <td className="px-3 py-2 font-mono font-semibold text-foreground">{s.price.toLocaleString('fr-FR')}</td>
+              <td className={cn('px-3 py-2 font-mono', s.change >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                {s.change >= 0 ? '+' : ''}{s.change.toLocaleString('fr-FR')}
+              </td>
+              <td className="px-3 py-2"><ChangeChip value={s.changePercent} size="xs" /></td>
+              <td className="px-3 py-2 font-mono text-muted-foreground">{s.volume.toLocaleString('fr-FR')}</td>
+              <td className="px-3 py-2 text-muted-foreground">{s.country}</td>
+              <td className="px-3 py-2"><Sparkline basePrice={s.price} positive={s.change >= 0} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+const YIELD_COLORS: Record<string, string> = { CI: '#3b82f6', SN: '#22c55e', BF: '#f59e0b', ML: '#ef4444', BJ: '#a855f7' }
+
+function CourbesTaux() {
   const [selected, setSelected] = useState<string[]>(['CI', 'SN', 'BF'])
-
   const maturities = ['3M', '6M', '1A', '2A', '5A', '10A']
-
   const chartData = maturities.map(mat => {
-    const point: Record<string, number | string> = { maturity: mat }
+    const pt: Record<string, number | string> = { maturity: mat }
     sovereignYields.forEach(c => {
       const y = c.yields.find(r => r.maturity === mat)
-      if (y && selected.includes(c.code)) point[c.code] = y.rate
+      if (y && selected.includes(c.code)) pt[c.code] = y.rate
     })
-    return point
+    return pt
   })
-
   return (
-    <div className="space-y-6">
-      {/* Country selector */}
-      <div className="flex flex-wrap gap-2">
+    <div className="p-4 space-y-3">
+      <div className="flex flex-wrap gap-1.5">
         {sovereignYields.map(c => (
-          <button
-            key={c.code}
-            onClick={() => setSelected(prev =>
-              prev.includes(c.code) ? prev.filter(x => x !== c.code) : [...prev, c.code]
-            )}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-              selected.includes(c.code)
-                ? 'border-transparent text-white'
-                : 'border-border text-muted-foreground hover:border-border/80',
-            )}
-            style={selected.includes(c.code) ? { background: YIELD_COLORS[c.code] } : {}}
-          >
-            <span className="w-2 h-2 rounded-full" style={{ background: YIELD_COLORS[c.code] }} />
+          <button key={c.code}
+            onClick={() => setSelected(prev => prev.includes(c.code) ? prev.filter(x => x !== c.code) : [...prev, c.code])}
+            className={cn('flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors',
+              selected.includes(c.code) ? 'border-transparent text-white' : 'border-border text-muted-foreground hover:bg-secondary/50')}
+            style={selected.includes(c.code) ? { background: YIELD_COLORS[c.code] } : {}}>
             {c.country}
           </button>
         ))}
       </div>
-
-      {/* Yield curve chart */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Courbes des Taux Souverains UEMOA</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
-            <XAxis dataKey="maturity" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-            <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickFormatter={v => `${v}%`} domain={[3, 10]} />
-            <Tooltip
-              contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
-              formatter={(v: number, name: string) => {
-                const c = sovereignYields.find(x => x.code === name)
-                return [`${v.toFixed(2)}%`, c?.country ?? name]
-              }}
-            />
-            <Legend formatter={(value) => sovereignYields.find(c => c.code === value)?.country ?? value} wrapperStyle={{ fontSize: 11 }} />
-            {sovereignYields.filter(c => selected.includes(c.code)).map(c => (
-              <Line key={c.code} type="monotone" dataKey={c.code} stroke={YIELD_COLORS[c.code]} strokeWidth={2} dot={{ r: 4, fill: YIELD_COLORS[c.code] }} />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Spreads table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Spreads par Maturité (vs Côte d'Ivoire)</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="px-4 py-2 text-left text-[10px] font-semibold text-muted-foreground">Pays</th>
-                {maturities.map(m => (
-                  <th key={m} className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground">{m}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sovereignYields.map((c, i) => {
-                const base = sovereignYields[0]
-                return (
-                  <tr key={c.code} className={cn('border-b border-border/50', i % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10')}>
-                    <td className="px-4 py-2 font-medium text-foreground flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full" style={{ background: YIELD_COLORS[c.code] }} />
-                      {c.country}
-                    </td>
-                    {maturities.map(mat => {
-                      const y = c.yields.find(r => r.maturity === mat)?.rate ?? 0
-                      const b = base.yields.find(r => r.maturity === mat)?.rate ?? 0
-                      const spread = c.code === 'CI' ? y : y - b
-                      return (
-                        <td key={mat} className="px-3 py-2 text-center font-mono">
-                          {c.code === 'CI'
-                            ? <span className="text-foreground">{y.toFixed(2)}%</span>
-                            : <span className={spread > 0 ? 'text-red-400' : 'text-emerald-400'}>
-                                {spread > 0 ? '+' : ''}{spread.toFixed(0)}pb
-                              </span>
-                          }
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ResponsiveContainer width="100%" height={220}>
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
+          <XAxis dataKey="maturity" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+          <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickFormatter={v => `${v}%`} domain={[3, 10]} />
+          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+            formatter={(v: number, name: string) => [`${v.toFixed(2)}%`, sovereignYields.find(x => x.code === name)?.country ?? name]} />
+          <Legend formatter={v => sovereignYields.find(c => c.code === v)?.country ?? v} wrapperStyle={{ fontSize: 10 }} />
+          {sovereignYields.filter(c => selected.includes(c.code)).map(c => (
+            <Line key={c.code} type="monotone" dataKey={c.code} stroke={YIELD_COLORS[c.code]} strokeWidth={2} dot={{ r: 3, fill: YIELD_COLORS[c.code] }} />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }
 
-// ─── Section 3 — Devises ─────────────────────────────────────────────────────
+function SpreadsMaturite() {
+  const maturities = ['3M', '6M', '1A', '2A', '5A', '10A']
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border bg-secondary/30">
+            <th className="px-4 py-2 text-left text-[10px] font-semibold text-muted-foreground">Pays</th>
+            {maturities.map(m => <th key={m} className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground">{m}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {sovereignYields.map((c, i) => {
+            const base = sovereignYields[0]
+            return (
+              <tr key={c.code} className={cn('border-b border-border/50', i % 2 === 0 ? '' : 'bg-secondary/10')}>
+                <td className="px-4 py-2 font-medium text-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: YIELD_COLORS[c.code] }} />
+                    {c.country}
+                  </div>
+                </td>
+                {maturities.map(mat => {
+                  const y = c.yields.find(r => r.maturity === mat)?.rate ?? 0
+                  const b = base.yields.find(r => r.maturity === mat)?.rate ?? 0
+                  const spread = c.code === 'CI' ? y : y - b
+                  return (
+                    <td key={mat} className="px-3 py-2 text-center font-mono">
+                      {c.code === 'CI'
+                        ? <span className="text-foreground">{y.toFixed(2)}%</span>
+                        : <span className={spread > 0 ? 'text-red-400' : 'text-emerald-400'}>{spread > 0 ? '+' : ''}{spread.toFixed(0)}pb</span>}
+                    </td>
+                  )
+                })}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
-function DevisesTab() {
-  const [selectedPair, setSelectedPair] = useState(currencyRates[0])
-
-  // Generate mock historical data for selected pair
+function DevisesGraphique() {
+  const [selected, setSelected] = useState(currencyRates[0])
   const history = useMemo(() => {
-    const seed = selectedPair.rate * 1e6
+    const seed = selected.rate * 1e6
     const data: { date: string; rate: number }[] = []
-    let r = selectedPair.rate
+    let r = selected.rate
     const rng = (() => {
       let s = Math.floor(seed) >>> 0
-      return () => {
-        s += 0x6d2b79f5
-        let t = Math.imul(s ^ (s >>> 15), 1 | s)
-        t ^= t + Math.imul(t ^ (t >>> 7), 61 | t)
-        return ((t ^ (t >>> 14)) >>> 0) / 0xffffffff
-      }
+      return () => { s += 0x6d2b79f5; let t = Math.imul(s ^ (s >>> 15), 1 | s); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 0xffffffff }
     })()
     const now = new Date('2026-04-10T00:00:00Z')
     for (let i = 59; i >= 0; i--) {
-      const d = new Date(now)
-      d.setDate(d.getDate() - i)
+      const d = new Date(now); d.setDate(d.getDate() - i)
       r = r + (rng() - 0.5) * 0.002 * r
       data.push({ date: d.toISOString().split('T')[0], rate: +r.toFixed(6) })
     }
     return data
-  }, [selectedPair.rate])
-
+  }, [selected.rate])
   return (
-    <div className="space-y-6">
-      {/* Pair cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="p-4 space-y-3">
+      <div className="flex flex-wrap gap-1.5">
         {currencyRates.map(c => (
-          <button
-            key={c.pair}
-            onClick={() => setSelectedPair(c)}
-            className={cn(
-              'text-left bg-card border rounded-lg p-3 transition-colors',
-              selectedPair.pair === c.pair ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-border/80',
-            )}
-          >
-            <p className="text-[10px] text-muted-foreground">{c.pair}</p>
-            <p className="text-sm font-bold font-mono text-foreground mt-0.5">{c.rate < 1 ? c.rate.toFixed(6) : fmt(c.rate, 2)}</p>
-            <ChangeChip value={c.changePercent} size="xs" />
+          <button key={c.pair} onClick={() => setSelected(c)}
+            className={cn('text-xs px-2.5 py-1 rounded border transition-colors font-mono', selected.pair === c.pair ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:bg-secondary/50')}>
+            {c.pair}
           </button>
         ))}
       </div>
-
-      {/* Chart */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <span className="text-sm font-bold text-foreground">{selectedPair.pair}</span>
-            <span className="ml-2 text-xs text-muted-foreground">60 jours</span>
-          </div>
-          <ChangeChip value={selectedPair.changePercent} />
-        </div>
-        <ResponsiveContainer width="100%" height={240}>
-          <AreaChart data={history}>
-            <defs>
-              <linearGradient id="fxGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={selectedPair.changePercent >= 0 ? '#34d399' : '#f87171'} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={selectedPair.changePercent >= 0 ? '#34d399' : '#f87171'} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
-            <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
-            <YAxis tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} domain={['auto', 'auto']} width={65} tickFormatter={v => v.toFixed(selectedPair.rate < 1 ? 5 : 2)} />
-            <Tooltip
-              contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
-              formatter={(v: number) => [v.toFixed(selectedPair.rate < 1 ? 6 : 4), selectedPair.pair]}
-              labelStyle={{ color: 'var(--muted-foreground)' }}
-            />
-            <Area type="monotone" dataKey="rate" stroke={selectedPair.changePercent >= 0 ? '#34d399' : '#f87171'} fill="url(#fxGrad)" strokeWidth={1.5} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold font-mono text-foreground">{selected.pair}</span>
+        <ChangeChip value={selected.changePercent} />
       </div>
-
-      {/* Full table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tableau des Paires</h3>
-        </div>
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-border bg-secondary/30">
-              {['Paire', 'Taux', 'Variation', 'Var. %'].map(h => (
-                <th key={h} className="px-4 py-2 text-left text-[10px] font-semibold text-muted-foreground">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {currencyRates.map((c, i) => (
-              <tr key={c.pair} className={cn('border-b border-border/50 cursor-pointer hover:bg-primary/5 transition-colors', i % 2 === 0 ? '' : 'bg-secondary/10')} onClick={() => setSelectedPair(c)}>
-                <td className="px-4 py-2 font-bold text-foreground font-mono">{c.pair}</td>
-                <td className="px-4 py-2 font-mono text-foreground">{c.rate < 1 ? c.rate.toFixed(6) : fmt(c.rate, 2)}</td>
-                <td className={cn('px-4 py-2 font-mono', c.change >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                  {c.change >= 0 ? '+' : ''}{c.change.toFixed(6)}
-                </td>
-                <td className="px-4 py-2"><ChangeChip value={c.changePercent} size="xs" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={history}>
+          <defs>
+            <linearGradient id="fxG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={selected.changePercent >= 0 ? '#34d399' : '#f87171'} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={selected.changePercent >= 0 ? '#34d399' : '#f87171'} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
+          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
+          <YAxis tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} domain={['auto', 'auto']} width={65} tickFormatter={v => v.toFixed(selected.rate < 1 ? 5 : 2)} />
+          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+            formatter={(v: number) => [v.toFixed(selected.rate < 1 ? 6 : 4), selected.pair]} labelStyle={{ color: 'var(--muted-foreground)' }} />
+          <Area type="monotone" dataKey="rate" stroke={selected.changePercent >= 0 ? '#34d399' : '#f87171'} fill="url(#fxG)" strokeWidth={1.5} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   )
 }
 
-// ─── Section 4 — Matières Premières ──────────────────────────────────────────
-
-const CATEGORIES = ['Tous', 'Agricole', 'Énergie', 'Métaux', 'Minéraux']
-
-function MatieresTab() {
-  const [period, setPeriod] = useState<CommodityPeriod>('jour')
-  const [category, setCategory] = useState('Tous')
-
-  const filtered = commodities.filter(c => category === 'Tous' || c.category === category)
-
-  function periodValue(c: typeof commodities[0]) {
-    if (period === 'jour') return c.changePercent
-    if (period === 'semaine') return c.weekChange
-    return c.monthChange
-  }
-
-  // Correlation data (mock — using week changes as proxy)
-  const corrData = CATEGORIES.slice(1).map(cat => ({
-    cat,
-    value: commodities.filter(c => c.category === cat).reduce((s, c) => s + c.weekChange, 0) /
-           (commodities.filter(c => c.category === cat).length || 1),
-  }))
-
+function DevisesTableau() {
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border bg-secondary/30">
+            {['Paire', 'Taux', 'Variation', 'Var. %'].map(h => (
+              <th key={h} className="px-4 py-2 text-left text-[10px] font-semibold text-muted-foreground">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {currencyRates.map((c, i) => (
+            <tr key={c.pair} className={cn('border-b border-border/50 hover:bg-primary/5 transition-colors', i % 2 === 0 ? '' : 'bg-secondary/10')}>
+              <td className="px-4 py-2 font-bold text-foreground font-mono">{c.pair}</td>
+              <td className="px-4 py-2 font-mono text-foreground">{c.rate < 1 ? c.rate.toFixed(6) : fmt(c.rate, 2)}</td>
+              <td className={cn('px-4 py-2 font-mono', c.change >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                {c.change >= 0 ? '+' : ''}{Math.abs(c.change).toFixed(6)}
+              </td>
+              <td className="px-4 py-2"><ChangeChip value={c.changePercent} size="xs" /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+type CommodityPeriod = 'jour' | 'semaine' | 'mois'
+const CAT_COLORS: Record<string, string> = { Agricole: 'bg-emerald-500/10 text-emerald-400', Énergie: 'bg-orange-500/10 text-orange-400', Métaux: 'bg-yellow-500/10 text-yellow-400', Minéraux: 'bg-blue-500/10 text-blue-400' }
+
+function MatieresPrix() {
+  const [period, setPeriod] = useState<CommodityPeriod>('jour')
+  const [cat, setCat] = useState('Tous')
+  const cats = ['Tous', 'Agricole', 'Énergie', 'Métaux', 'Minéraux']
+  const filtered = commodities.filter(c => cat === 'Tous' || c.category === cat)
+  const val = (c: typeof commodities[0]) => period === 'jour' ? c.changePercent : period === 'semaine' ? c.weekChange : c.monthChange
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex flex-wrap gap-2">
         <div className="flex rounded-lg border border-border overflow-hidden">
           {(['jour', 'semaine', 'mois'] as CommodityPeriod[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={cn('px-3 py-1.5 text-xs font-medium capitalize transition-colors', period === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary/50')}
-            >
-              {p === 'jour' ? 'Journalier' : p === 'semaine' ? 'Hebdo.' : 'Mensuel'}
+            <button key={p} onClick={() => setPeriod(p)}
+              className={cn('px-3 py-1.5 text-xs font-medium transition-colors', period === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary/50')}>
+              {p === 'jour' ? 'J' : p === 'semaine' ? 'S' : 'M'}
             </button>
           ))}
         </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={cn('px-3 py-1.5 text-xs rounded-lg border transition-colors', category === cat ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:bg-secondary/50')}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {cats.map(c => (
+          <button key={c} onClick={() => setCat(c)}
+            className={cn('px-2.5 py-1 text-xs rounded-lg border transition-colors', cat === c ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:bg-secondary/50')}>
+            {c}
+          </button>
+        ))}
       </div>
-
-      {/* Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {filtered.map(c => {
-          const val = periodValue(c)
-          const pos = val >= 0
+          const v = val(c); const pos = v >= 0
           return (
-            <div key={c.symbol} className="bg-card border border-border rounded-lg p-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{c.symbol}</p>
-                  <p className="text-xs font-medium text-foreground mt-0.5">{c.name}</p>
-                </div>
-                <span className={cn('text-[9px] px-1.5 py-0.5 rounded font-medium', c.category === 'Agricole' ? 'bg-emerald-500/10 text-emerald-400' : c.category === 'Énergie' ? 'bg-orange-500/10 text-orange-400' : c.category === 'Métaux' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-blue-500/10 text-blue-400')}>
-                  {c.category}
-                </span>
+            <div key={c.symbol} className="bg-secondary/20 rounded-lg p-3">
+              <div className="flex items-start justify-between gap-1">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">{c.symbol}</p>
+                <span className={cn('text-[9px] px-1 py-0.5 rounded font-medium shrink-0', CAT_COLORS[c.category] ?? '')}>{c.category}</span>
               </div>
-              <p className="text-sm font-bold font-mono text-foreground mt-2">{c.price < 10 ? c.price.toFixed(2) : fmt(c.price, 0)}</p>
+              <p className="text-xs font-medium text-foreground mt-0.5 truncate">{c.name}</p>
+              <p className="text-sm font-bold font-mono text-foreground mt-1">{c.price < 10 ? c.price.toFixed(2) : fmt(c.price, 0)}</p>
               <p className="text-[10px] text-muted-foreground">{c.unit}</p>
-              <div className="mt-1.5 flex items-center gap-1">
+              <div className="mt-1 flex items-center gap-1">
                 {pos ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
-                <span className={cn('text-xs font-mono font-semibold', pos ? 'text-emerald-400' : 'text-red-400')}>{pct(val)}</span>
+                <span className={cn('text-xs font-mono font-semibold', pos ? 'text-emerald-400' : 'text-red-400')}>{pct(v)}</span>
               </div>
             </div>
           )
         })}
       </div>
-
-      {/* Correlation bar chart */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Performance Hebdomadaire par Catégorie</h3>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={corrData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
-            <XAxis dataKey="cat" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-            <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickFormatter={v => `${v.toFixed(1)}%`} />
-            <Tooltip
-              contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
-              formatter={(v: number) => [`${v.toFixed(2)}%`, 'Perf. moy.']}
-            />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {corrData.map((entry, i) => (
-                <rect key={i} fill={entry.value >= 0 ? '#34d399' : '#f87171'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   )
 }
 
-// ─── Section 5 — Performances ─────────────────────────────────────────────────
+function MatieresPerf() {
+  const cats = ['Agricole', 'Énergie', 'Métaux', 'Minéraux']
+  const data = cats.map(cat => ({
+    cat,
+    j: +(commodities.filter(c => c.category === cat).reduce((s, c) => s + c.changePercent, 0) / (commodities.filter(c => c.category === cat).length || 1)).toFixed(2),
+    s: +(commodities.filter(c => c.category === cat).reduce((s, c) => s + c.weekChange, 0) / (commodities.filter(c => c.category === cat).length || 1)).toFixed(2),
+    m: +(commodities.filter(c => c.category === cat).reduce((s, c) => s + c.monthChange, 0) / (commodities.filter(c => c.category === cat).length || 1)).toFixed(2),
+  }))
+  return (
+    <div className="p-4">
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
+          <XAxis dataKey="cat" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+          <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickFormatter={v => `${v}%`} />
+          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }} formatter={(v: number, n: string) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, n === 'j' ? 'Jour' : n === 's' ? 'Semaine' : 'Mois']} />
+          <Legend formatter={v => v === 'j' ? 'Jour' : v === 's' ? 'Semaine' : 'Mois'} wrapperStyle={{ fontSize: 10 }} />
+          <Bar dataKey="j" fill="#34d399" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="s" fill="#60a5fa" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="m" fill="#a78bfa" radius={[2, 2, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
-function PerformancesTab() {
+function TopMovers() {
   const sorted = [...brvmStocks].sort((a, b) => b.changePercent - a.changePercent)
   const gainers = sorted.slice(0, 5)
   const losers = [...sorted].reverse().slice(0, 5)
-  const byVolume = [...brvmStocks].sort((a, b) => b.volume - a.volume).slice(0, 6)
-
-  const sectorChartData = sectorPerformance.map(s => ({ name: s.sector, perf: s.performance, vol: Math.round(s.volume / 1000) }))
-
   return (
-    <div className="space-y-6">
-      {/* Top movers */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Gainers */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Top Hausses</h3>
+    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {[{ label: 'Top Hausses', icon: TrendingUp, color: 'text-emerald-400', data: gainers }, { label: 'Top Baisses', icon: TrendingDown, color: 'text-red-400', data: losers }].map(({ label, icon: Icon, color, data }) => (
+        <div key={label}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Icon className={cn('w-3.5 h-3.5', color)} />
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</p>
           </div>
-          <div className="divide-y divide-border/50">
-            {gainers.map(s => (
-              <div key={s.symbol} className="px-4 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-xs text-foreground w-12">{s.symbol}</span>
-                  <div>
-                    <p className="text-xs text-foreground">{s.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.sector}</p>
-                  </div>
+          <div className="space-y-1.5">
+            {data.map(s => (
+              <div key={s.symbol} className="flex items-center justify-between px-2 py-1.5 rounded bg-secondary/20">
+                <div>
+                  <span className="font-mono font-bold text-xs text-foreground">{s.symbol}</span>
+                  <p className="text-[10px] text-muted-foreground">{s.sector}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-mono font-semibold text-foreground">{s.price.toLocaleString('fr-FR')}</p>
+                  <p className="text-xs font-mono text-foreground">{s.price.toLocaleString('fr-FR')}</p>
                   <ChangeChip value={s.changePercent} size="xs" />
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Losers */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-red-400" />
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Top Baisses</h3>
-          </div>
-          <div className="divide-y divide-border/50">
-            {losers.map(s => (
-              <div key={s.symbol} className="px-4 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-xs text-foreground w-12">{s.symbol}</span>
-                  <div>
-                    <p className="text-xs text-foreground">{s.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.sector}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-mono font-semibold text-foreground">{s.price.toLocaleString('fr-FR')}</p>
-                  <ChangeChip value={s.changePercent} size="xs" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Most traded */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-          <Activity className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Titres les Plus Échangés</h3>
-        </div>
-        <div className="p-4">
-          <div className="space-y-2">
-            {byVolume.map((s, i) => {
-              const maxVol = byVolume[0].volume
-              return (
-                <div key={s.symbol} className="flex items-center gap-3">
-                  <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
-                  <span className="font-mono font-bold text-xs text-foreground w-12">{s.symbol}</span>
-                  <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${(s.volume / maxVol) * 100}%` }} />
-                  </div>
-                  <span className="font-mono text-xs text-muted-foreground w-20 text-right">{s.volume.toLocaleString('fr-FR')}</span>
-                  <ChangeChip value={s.changePercent} size="xs" />
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Sector trends */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Tendances Sectorielles</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={sectorChartData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={v => `${v}%`} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} width={110} />
-            <Tooltip
-              contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
-              formatter={(v: number) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, 'Performance']}
-            />
-            <Bar dataKey="perf" radius={[0, 4, 4, 0]}>
-              {sectorChartData.map((entry, i) => (
-                <rect key={i} fill={entry.perf >= 0 ? '#34d399' : '#f87171'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      ))}
     </div>
   )
 }
 
-// ─── Section 6 — Flash Info & Web TV ─────────────────────────────────────────
-
-function FlashInfoTab() {
+function MostTraded() {
+  const byVol = [...brvmStocks].sort((a, b) => b.volume - a.volume).slice(0, 8)
+  const max = byVol[0].volume
   return (
-    <div className="space-y-6">
-      {/* Breaking alerts */}
-      <div className="space-y-2">
-        {newsItems.filter(n => n.isBreaking).map(n => (
-          <div key={n.id} className="flex items-start gap-3 bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3">
-            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold text-destructive uppercase tracking-wider">Flash</span>
-                <span className="text-[10px] text-muted-foreground">{n.source}</span>
-              </div>
-              <p className="text-xs font-semibold text-foreground">{n.title}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{n.summary}</p>
-            </div>
+    <div className="p-4 space-y-2">
+      {byVol.map((s, i) => (
+        <div key={s.symbol} className="flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground w-4 shrink-0">{i + 1}</span>
+          <span className="font-mono font-bold text-xs text-foreground w-12 shrink-0">{s.symbol}</span>
+          <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full" style={{ width: `${(s.volume / max) * 100}%` }} />
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* News feed */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <Newspaper className="w-4 h-4 text-primary" />
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Actualités en Temps Réel</h3>
-          </div>
-          <div className="divide-y divide-border/50">
-            {newsItems.map(n => (
-              <div key={n.id} className="px-4 py-3 hover:bg-secondary/20 transition-colors cursor-pointer">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={cn(
-                    'text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider',
-                    n.isBreaking ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary',
-                  )}>
-                    {n.isBreaking ? '⚡ Flash' : n.category}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">{n.source}</span>
-                  <span className="text-[10px] text-muted-foreground ml-auto">
-                    {new Date(n.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                <p className="text-xs font-semibold text-foreground leading-snug">{n.title}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{n.summary}</p>
-              </div>
-            ))}
-          </div>
+          <span className="font-mono text-xs text-muted-foreground w-20 text-right shrink-0">{s.volume.toLocaleString('fr-FR')}</span>
+          <ChangeChip value={s.changePercent} size="xs" />
         </div>
-
-        {/* Web TV */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <Tv className="w-4 h-4 text-primary" />
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Web TV — Programme</h3>
-          </div>
-          <div className="divide-y divide-border/50">
-            {tvPrograms.map(p => (
-              <div key={p.id} className="px-4 py-3 flex items-center gap-3 hover:bg-secondary/20 transition-colors cursor-pointer">
-                {/* Thumbnail placeholder */}
-                <div className={cn('w-20 h-12 rounded shrink-0 flex items-center justify-center', p.isLive ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/50')}>
-                  {p.isLive
-                    ? <span className="text-[9px] font-bold text-destructive animate-pulse">● LIVE</span>
-                    : <Tv className="w-5 h-5 text-muted-foreground/50" />
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium">{p.category}</span>
-                    {p.scheduledTime && <span className="text-[10px] text-muted-foreground">{p.scheduledTime}</span>}
-                  </div>
-                  <p className="text-xs font-semibold text-foreground truncate">{p.title}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{p.description}</p>
-                </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">{p.duration}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
+  )
+}
+
+function SectorTrends() {
+  const data = sectorPerformance.map(s => ({ name: s.sector, perf: s.performance }))
+  return (
+    <div className="p-4">
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={data} layout="vertical">
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={v => `${v}%`} />
+          <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} width={110} />
+          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+            formatter={(v: number) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, 'Performance']} />
+          <Bar dataKey="perf" radius={[0, 4, 4, 0]}>
+            {data.map((entry, i) => <rect key={i} fill={entry.perf >= 0 ? '#34d399' : '#f87171'} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function FlashAlerts() {
+  const breaking = newsItems.filter(n => n.isBreaking)
+  return (
+    <div className="p-4 space-y-2">
+      {breaking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Aucune alerte critique</p>}
+      {breaking.map(n => (
+        <div key={n.id} className="flex items-start gap-3 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2.5">
+          <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[10px] font-bold text-destructive uppercase tracking-wider">Flash</span>
+              <span className="text-[10px] text-muted-foreground">{n.source}</span>
+            </div>
+            <p className="text-xs font-semibold text-foreground">{n.title}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{n.summary}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Actualites() {
+  return (
+    <div className="divide-y divide-border/50">
+      {newsItems.map(n => (
+        <div key={n.id} className="px-4 py-3 hover:bg-secondary/20 transition-colors cursor-pointer">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={cn('text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider',
+              n.isBreaking ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary')}>
+              {n.isBreaking ? '⚡ Flash' : n.category}
+            </span>
+            <span className="text-[10px] text-muted-foreground">{n.source}</span>
+            <span className="text-[10px] text-muted-foreground ml-auto">
+              {new Date(n.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+          <p className="text-xs font-semibold text-foreground leading-snug">{n.title}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{n.summary}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function WebTV() {
+  return (
+    <div className="divide-y divide-border/50">
+      {tvPrograms.map(p => (
+        <div key={p.id} className="px-4 py-3 flex items-center gap-3 hover:bg-secondary/20 transition-colors cursor-pointer">
+          <div className={cn('w-16 h-10 rounded shrink-0 flex items-center justify-center text-center',
+            p.isLive ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary/50')}>
+            {p.isLive ? <span className="text-[9px] font-bold text-destructive animate-pulse">● LIVE</span> : <Tv className="w-4 h-4 text-muted-foreground/50" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium">{p.category}</span>
+              {p.scheduledTime && <span className="text-[10px] text-muted-foreground">{p.scheduledTime}</span>}
+            </div>
+            <p className="text-xs font-semibold text-foreground truncate">{p.title}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{p.description}</p>
+          </div>
+          <span className="text-[10px] text-muted-foreground shrink-0">{p.duration}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Section renderer ─────────────────────────────────────────────────────────
+
+const SECTION_TITLES: Record<SectionId, string> = {
+  'indices-africains':   'Indices Africains',
+  'cours-brvm':          'Cours & Graphique',
+  'heatmap-sectorielle': 'Heatmap Sectorielle',
+  'cotations-brvm':      'Cotations BRVM',
+  'courbes-taux':        'Courbes des Taux Souverains',
+  'spreads-maturite':    'Spreads par Maturité',
+  'devises-graphique':   'Paires & Graphique',
+  'devises-tableau':     'Tableau des Paires',
+  'matieres-prix':       'Prix Spot Matières Premières',
+  'matieres-perf':       'Perf. par Catégorie',
+  'top-movers':          'Top Hausses / Baisses',
+  'most-traded':         'Titres les Plus Échangés',
+  'sector-trends':       'Tendances Sectorielles',
+  'flash-alerts':        'Alertes Flash',
+  'actualites':          'Actualités',
+  'web-tv':              'Web TV',
+}
+
+function renderSection(id: SectionId) {
+  switch (id) {
+    case 'indices-africains':   return <IndicesAfricains />
+    case 'cours-brvm':          return <CoursBRVM />
+    case 'heatmap-sectorielle': return <HeatmapSectorielle />
+    case 'cotations-brvm':      return <CotationsBRVM />
+    case 'courbes-taux':        return <CourbesTaux />
+    case 'spreads-maturite':    return <SpreadsMaturite />
+    case 'devises-graphique':   return <DevisesGraphique />
+    case 'devises-tableau':     return <DevisesTableau />
+    case 'matieres-prix':       return <MatieresPrix />
+    case 'matieres-perf':       return <MatieresPerf />
+    case 'top-movers':          return <TopMovers />
+    case 'most-traded':         return <MostTraded />
+    case 'sector-trends':       return <SectorTrends />
+    case 'flash-alerts':        return <FlashAlerts />
+    case 'actualites':          return <Actualites />
+    case 'web-tv':              return <WebTV />
+  }
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+function Sidebar({
+  active,
+  onToggle,
+  collapsed,
+  onCollapse,
+}: {
+  active: Set<SectionId>
+  onToggle: (id: SectionId) => void
+  collapsed: boolean
+  onCollapse: () => void
+}) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(SIDEBAR_GROUPS.map(g => g.id)))
+
+  function toggleGroup(id: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  return (
+    <aside className={cn(
+      'h-full bg-card border-r border-sidebar-border flex flex-col transition-all duration-300 shrink-0',
+      collapsed ? 'w-14' : 'w-60',
+    )}>
+      {/* Header */}
+      <div className={cn('h-10 flex items-center border-b border-sidebar-border px-3', collapsed ? 'justify-center' : 'justify-between')}>
+        {!collapsed && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sections</span>}
+        <button onClick={onCollapse} className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground">
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-2">
+        {SIDEBAR_GROUPS.map(group => {
+          const isExpanded = expanded.has(group.id)
+          const activeCount = group.items.filter(i => active.has(i.id)).length
+          const GroupIcon = group.icon
+
+          return (
+            <div key={group.id} className="mb-1">
+              {/* Group header */}
+              <button
+                onClick={() => !collapsed && toggleGroup(group.id)}
+                title={collapsed ? group.label : undefined}
+                className={cn(
+                  'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-sidebar-accent/50',
+                  collapsed && 'justify-center',
+                )}
+              >
+                {collapsed ? (
+                  <div className="relative">
+                    <GroupIcon className="w-4 h-4 text-muted-foreground" />
+                    {activeCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary text-primary-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
+                        {activeCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <GroupIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="flex-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{group.label}</span>
+                    {activeCount > 0 && (
+                      <span className="w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">{activeCount}</span>
+                    )}
+                    <ChevronDown className={cn('w-3 h-3 text-muted-foreground shrink-0 transition-transform', !isExpanded && '-rotate-90')} />
+                  </>
+                )}
+              </button>
+
+              {/* Items */}
+              {(isExpanded || collapsed) && (
+                <div className={cn('space-y-0.5 px-1.5', collapsed && 'px-1')}>
+                  {group.items.map(item => {
+                    const Icon = item.icon
+                    const isActive = active.has(item.id)
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => onToggle(item.id)}
+                        title={collapsed ? item.label : undefined}
+                        className={cn(
+                          'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-colors group',
+                          'hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground',
+                          isActive && 'bg-sidebar-accent/60',
+                          collapsed && 'justify-center px-2',
+                        )}
+                      >
+                        <Icon className={cn('w-3.5 h-3.5 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
+                        {!collapsed && (
+                          <div className="flex-1 min-w-0">
+                            <div className={cn('text-xs font-medium truncate', isActive && 'text-primary')}>{item.label}</div>
+                            <div className="text-[10px] text-muted-foreground truncate">{item.description}</div>
+                          </div>
+                        )}
+                        {!collapsed && (
+                          <div className={cn('w-2 h-2 rounded-full shrink-0 transition-colors', isActive ? 'bg-primary' : 'bg-transparent')} />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </nav>
+
+      {/* Active count */}
+      {!collapsed && (
+        <div className="px-4 py-3 border-t border-sidebar-border">
+          <p className="text-[10px] text-muted-foreground">
+            <span className="font-bold text-foreground">{active.size}</span> section{active.size !== 1 ? 's' : ''} affichée{active.size !== 1 ? 's' : ''}
+          </p>
+        </div>
+      )}
+    </aside>
   )
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OperationsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('marches')
+  const [active, setActive] = useState<Set<SectionId>>(new Set(DEFAULT_SECTIONS))
+  const [collapsed, setCollapsed] = useState(false)
+
+  function toggleSection(id: SectionId) {
+    setActive(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  // All sections in sidebar order (for stable rendering)
+  const allItems = SIDEBAR_GROUPS.flatMap(g => g.items)
+  const activeSections = allItems.filter(item => active.has(item.id))
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Tab bar */}
-      <div className="shrink-0 border-b border-border bg-card px-4 overflow-x-auto">
-        <div className="flex gap-0.5 min-w-max">
-          {TABS.map(tab => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap',
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+    <div className="flex h-full bg-background overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar
+        active={active}
+        onToggle={toggleSection}
+        collapsed={collapsed}
+        onCollapse={() => setCollapsed(c => !c)}
+      />
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        {activeTab === 'marches'      && <MarchesTab />}
-        {activeTab === 'taux'         && <TauxTab />}
-        {activeTab === 'devises'      && <DevisesTab />}
-        {activeTab === 'matieres'     && <MatieresTab />}
-        {activeTab === 'performances' && <PerformancesTab />}
-        {activeTab === 'flashinfo'    && <FlashInfoTab />}
+      {/* Workspace */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {activeSections.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center gap-3">
+            <LayoutGrid className="w-12 h-12 text-muted-foreground/30" />
+            <p className="text-sm font-medium text-muted-foreground">Aucune section affichée</p>
+            <p className="text-xs text-muted-foreground/70">Cliquez sur une section dans la barre latérale pour l'afficher.</p>
+          </div>
+        ) : (
+          <div className="columns-1 xl:columns-2 gap-4 space-y-4">
+            {activeSections.map(item => (
+              <div key={item.id} className="break-inside-avoid mb-4">
+                <SectionCard id={item.id} onClose={toggleSection}>
+                  {/* Section header */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
+                    <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id]}</span>
+                  </div>
+                  {renderSection(item.id)}
+                </SectionCard>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

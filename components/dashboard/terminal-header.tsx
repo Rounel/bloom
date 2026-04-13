@@ -225,7 +225,7 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
 
       {/* Market Ticker Bar with Infinite Scroll */}
       <div className="h-8 bg-secondary/30 overflow-hidden relative">
-        <div className="flex animate-scroll-infinite whitespace-nowrap">
+        <div className="flex items-center bg-navy animate-scroll-infinite whitespace-nowrap">
           {tickerItems.map((item, index) => (
             <div key={`first-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
               <span className="text-xs font-medium text-muted-foreground">{item.label}</span>

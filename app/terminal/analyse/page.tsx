@@ -180,7 +180,7 @@ export default function AnalysePage() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="h-14 border-b flex items-center px-6 bg-card/50 backdrop-blur-sm gap-4 shrink-0">
+      {/* <header className="h-14 border-b flex items-center px-6 bg-card/50 backdrop-blur-sm gap-4 shrink-0">
         <Link href="/modules" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft className="w-4 h-4" />
           <span className="text-sm">Modules</span>
@@ -195,9 +195,9 @@ export default function AnalysePage() {
           <Clock className="w-3.5 h-3.5" />
           {time}
         </div>
-      </header>
+      </header> */}
 
-      <TickerBar />
+      {/* <TickerBar /> */}
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
         <div className="grid xl:grid-cols-3 gap-4">
