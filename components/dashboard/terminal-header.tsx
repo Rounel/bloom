@@ -18,9 +18,8 @@ import {
   UserCircle,
   KeyRound,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { marketIndices, brvmStocks } from '@/lib/mock-data'
 import { useDashboardStore } from '@/lib/dashboard-store'
+import { TickerBar } from '@/components/dashboard/ticker-bar'
 import Link from 'next/link'
 import {
   DropdownMenu,
@@ -62,22 +61,6 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
     }
   }, [isDark])
 
-  // Combine market indices and top stocks for ticker
-  const tickerItems = [
-    ...marketIndices.map(index => ({
-      label: index.name,
-      value: index.value.toLocaleString('fr-FR', { maximumFractionDigits: 2 }),
-      change: index.changePercent,
-      isPositive: index.change >= 0,
-    })),
-    ...brvmStocks.slice(0, 8).map(stock => ({
-      label: stock.symbol,
-      value: stock.price.toLocaleString('fr-FR'),
-      change: stock.changePercent,
-      isPositive: stock.change >= 0,
-    })),
-  ]
-
   return (
     <header className="bg-card border-b border-border shrink-0">
       {/* Top Bar */}
@@ -107,6 +90,10 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
             <Link href="/terminal/dashboard" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
               <BarChart3 className="w-4 h-4" />
               Dashboard
+            </Link>
+            <Link href="/terminal/portfolio" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              Portefeuille
             </Link>
             <Link href="/terminal/operations" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
               <BarChart3 className="w-4 h-4" />
@@ -223,35 +210,8 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
         </div>
       </div>
 
-      {/* Market Ticker Bar with Infinite Scroll */}
-      <div className="h-8 bg-secondary/30 overflow-hidden relative">
-        <div className="flex items-center bg-navy animate-scroll-infinite whitespace-nowrap">
-          {tickerItems.map((item, index) => (
-            <div key={`first-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
-              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-mono font-semibold text-foreground">{item.value}</span>
-              <span className={cn(
-                'text-xs font-mono font-semibold',
-                item.isPositive ? 'text-ring' : 'text-destructive',
-              )}>
-                {item.isPositive ? '+' : ''}{item.change.toFixed(2)}%
-              </span>
-            </div>
-          ))}
-          {tickerItems.map((item, index) => (
-            <div key={`second-${index}`} className="inline-flex items-center gap-2 px-4 border-r border-border/30">
-              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-mono font-semibold text-foreground">{item.value}</span>
-              <span className={cn(
-                'text-xs font-mono font-semibold',
-                item.isPositive ? 'text-ring' : 'text-destructive',
-              )}>
-                {item.isPositive ? '+' : ''}{item.change.toFixed(2)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Market Ticker Bar */}
+      <TickerBar />
     </header>
   )
 }

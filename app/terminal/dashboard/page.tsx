@@ -14,85 +14,11 @@ import { cn } from '@/lib/utils'
 import {
   brvmStocks, marketIndices, sectorPerformance, currencyRates, newsItems,
 } from '@/lib/mock-data'
+import { TickerBar } from '@/components/dashboard/ticker-bar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type WidgetId = 'indices' | 'top-movers' | 'sector-volumes' | 'market-cap' | 'fx-rates' | 'news'
-
-interface TickerItem {
-  label: string
-  value: string
-  change: number
-  isPositive: boolean
-}
-
-// ─── Ticker Bar ───────────────────────────────────────────────────────────────
-
-function buildTickerItems(): TickerItem[] {
-  return [
-    ...marketIndices.map(idx => ({
-      label: idx.name,
-      value: idx.value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      change: idx.changePercent,
-      isPositive: idx.change >= 0,
-    })),
-    ...brvmStocks.map(s => ({
-      label: s.symbol,
-      value: s.price.toLocaleString('fr-FR'),
-      change: s.changePercent,
-      isPositive: s.change >= 0,
-    })),
-  ]
-}
-
-function TickerBar() {
-  const [items, setItems] = useState<TickerItem[]>([])
-
-  useEffect(() => {
-    setItems(buildTickerItems())
-    // Simulate live price noise every 1.5 s — client-only, no SSR mismatch
-    const id = setInterval(() => {
-      setItems(prev =>
-        prev.map(item => {
-          const noise = (Math.random() - 0.5) * 0.06
-          const change = item.change + noise
-          return { ...item, change, isPositive: change >= 0 }
-        })
-      )
-    }, 1500)
-    return () => clearInterval(id)
-  }, [])
-
-  if (!items.length) return <div className="h-9 bg-secondary/40 border-b border-border/50" />
-
-  return (
-    <div className="h-9 bg-secondary/40 border-b border-border/50 overflow-hidden flex items-center relative select-none">
-      {/* Fade masks */}
-      <div className="absolute left-0 inset-y-0 w-10 bg-gradient-to-r from-secondary/60 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-secondary/60 to-transparent z-10 pointer-events-none" />
-
-      <div className="flex animate-scroll-infinite whitespace-nowrap [animation-duration:45s] hover:[animation-play-state:paused]">
-        {[...items, ...items].map((item, i) => (
-          <div
-            key={i}
-            className="inline-flex items-center gap-2 px-4 border-r border-border/30"
-          >
-            <span className="text-[11px] font-semibold text-muted-foreground">{item.label}</span>
-            <span className="text-[11px] font-mono font-bold text-foreground">{item.value}</span>
-            <span
-              className={cn(
-                'text-[11px] font-mono font-bold transition-colors',
-                item.isPositive ? 'text-emerald-500' : 'text-red-400',
-              )}
-            >
-              {item.isPositive ? '▲' : '▼'}&thinsp;{Math.abs(item.change).toFixed(2)}%
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -614,54 +540,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* ── Header ── */}
-      <header className="h-14 border-b border-border/50 flex items-center gap-3 px-4 lg:px-6 bg-card/50 backdrop-blur-sm shrink-0">
-        <Link
-          href="/modules"
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-xs font-semibold hidden sm:block">Modules</span>
-        </Link>
-
-        <div className="h-4 w-px bg-border hidden sm:block" />
-
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-primary" />
-          </div>
-          <span className="text-sm font-black text-foreground hidden md:block">Dashboard</span>
-        </div>
-
-        <div className="h-4 w-px bg-border hidden md:block" />
-
-        {/* Search */}
-        <div className="flex-1 max-w-sm">
-          <SearchBar />
-        </div>
-
-        {/* Right controls */}
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground bg-secondary/50 px-2.5 py-1.5 rounded-lg border border-border/50">
-            <Wifi className="w-3 h-3 text-emerald-500" />
-            <Clock className="w-3 h-3" />
-            <span className="font-mono">{time}</span>
-          </div>
-
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg border border-border/50 bg-secondary/30 hover:bg-secondary transition-colors"
-            title={isDark ? 'Thème clair' : 'Thème sombre'}
-          >
-            {isDark
-              ? <Sun className="w-4 h-4 text-muted-foreground" />
-              : <Moon className="w-4 h-4 text-muted-foreground" />}
-          </button>
-        </div>
-      </header>
-
-      {/* ── Ticker ── */}
-      <TickerBar />
 
       {/* ── Main ── */}
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
