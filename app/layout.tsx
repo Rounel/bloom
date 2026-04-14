@@ -52,6 +52,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="">
+      <head>
+        {/* Apply saved theme before first paint to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('bloomfield-theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
+      </head>
       <body className={`${lato.variable} ${roboto.variable} antialiased bg-background text-foreground`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

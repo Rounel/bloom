@@ -49,7 +49,7 @@ export function TickerBar() {
   if (!items.length) return <div className="h-9 bg-secondary/40 border-b border-border/50" />
 
   return (
-    <div className="h-9 bg-secondary/40 border-b border-border/50 overflow-hidden flex items-center relative select-none">
+    <div className="h-7 bg-[#0f2035] border-b border-border/50 overflow-hidden flex items-center relative select-none">
       {/* Fade masks */}
       <div className="absolute left-0 inset-y-0 w-10 bg-gradient-to-r from-secondary/60 to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-secondary/60 to-transparent z-10 pointer-events-none" />
@@ -60,11 +60,11 @@ export function TickerBar() {
             key={i}
             className="inline-flex items-center gap-2 px-4 border-r border-border/30"
           >
-            <span className="text-[11px] font-semibold text-muted-foreground">{item.label}</span>
-            <span className="text-[11px] font-mono font-bold text-foreground">{item.value}</span>
+            <span className="text-[13px] font-bold text-teal-500">{item.label}</span>
+            <span className="text-[13px] font-mono font-bold text-gray-400">{item.value}</span>
             <span
               className={cn(
-                'text-[11px] font-mono font-bold transition-colors',
+                'text-[13px] font-mono font-bold transition-colors',
                 item.isPositive ? 'text-emerald-500' : 'text-red-400',
               )}
             >

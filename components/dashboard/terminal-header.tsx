@@ -26,7 +26,6 @@ import {
 import { useDashboardStore } from '@/lib/dashboard-store'
 import { useSplitStore } from '@/lib/split-store'
 import { MODULE_DRAG_TYPE } from '@/components/dashboard/split-workspace'
-import { TickerBar } from '@/components/dashboard/ticker-bar'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
@@ -97,6 +96,14 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
   const { setSidebarOpen } = useDashboardStore()
   const { setIsDraggingModule } = useSplitStore()
 
+  // Restore theme from localStorage on mount (after hydration)
+  useEffect(() => {
+    const saved = localStorage.getItem('bloomfield-theme')
+    if (saved !== null) {
+      setIsDark(saved === 'dark')
+    }
+  }, [])
+
   // ⌘K / Ctrl+K global shortcut
   useEffect(() => {
     if (!onSearchOpen) return
@@ -114,8 +121,10 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
     const html = document.documentElement
     if (isDark) {
       html.classList.add('dark')
+      localStorage.setItem('bloomfield-theme', 'dark')
     } else {
       html.classList.remove('dark')
+      localStorage.setItem('bloomfield-theme', 'light')
     }
   }, [isDark])
 
@@ -257,9 +266,6 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
           </DropdownMenu>
         </div>
       </div>
-
-      {/* Market Ticker Bar */}
-      <TickerBar />
     </header>
   )
 }

@@ -18,6 +18,7 @@ import {
   sovereignYields, generateStockHistory,
 } from '@/lib/mock-data'
 import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+import { TickerBar } from '@/components/dashboard/ticker-bar'
 
 // ─── Section IDs ──────────────────────────────────────────────────────────────
 
@@ -649,6 +650,7 @@ export default function OperationsPage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <ModuleLayout pageKey="operations" sections={SECTIONS}>
+        <TickerBar />
         <div className="p-4 columns-1 xl:columns-2 gap-4">
           {SECTIONS.map(item => (
             <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false} className="break-inside-avoid mb-4">
@@ -660,7 +662,7 @@ export default function OperationsPage() {
                 {renderSection(item.id as SectionId)}
               </SectionCard>
             </ModuleSection>
-          ))}
+          ))} 
         </div>
       </ModuleLayout>
     </div>

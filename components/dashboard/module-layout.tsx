@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { PanelLeftClose, PanelLeft, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useModuleSectionsStore } from '@/lib/module-sections-store'
@@ -74,10 +74,13 @@ export function ModuleSection({
   resizable?: boolean
   children: React.ReactNode
 }) {
+  const [hydrated, setHydrated] = useState(false)
   const { getConfig } = useModuleSectionsStore()
   const cfg = getConfig(pageKey, id)
 
-  if (!cfg.visible) return null
+  useEffect(() => { setHydrated(true) }, [])
+
+  if (hydrated && !cfg.visible) return null
 
   return (
     <div
@@ -109,7 +112,10 @@ export function ModuleLayout({
   mainClassName?: string
 }) {
   const [open, setOpen] = useState(true)
+  const [hydrated, setHydrated] = useState(false)
   const { getConfig, toggle, showAll } = useModuleSectionsStore()
+
+  useEffect(() => { setHydrated(true) }, [])
 
   const visibleCount = sections.filter(s => getConfig(pageKey, s.id).visible).length
   const hiddenCount  = sections.length - visibleCount
@@ -150,7 +156,7 @@ export function ModuleLayout({
         {/* Section list */}
         <div className="flex-1 overflow-y-auto py-1">
           {sections.map(s => {
-            const visible = getConfig(pageKey, s.id).visible
+            const visible = !hydrated || getConfig(pageKey, s.id).visible
             const Icon = s.icon
             return (
               <button
