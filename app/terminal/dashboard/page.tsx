@@ -15,6 +15,17 @@ import {
   brvmStocks, marketIndices, sectorPerformance, currencyRates, newsItems,
 } from '@/lib/mock-data'
 import { TickerBar } from '@/components/dashboard/ticker-bar'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+
+const SECTIONS: SectionDef[] = [
+  { id: 'summary',        label: 'Résumé du marché',   icon: Activity },
+  { id: 'indices',        label: 'Indices BRVM',        icon: Activity },
+  { id: 'top-movers',     label: 'Top Movers',          icon: TrendingUp },
+  { id: 'market-cap',     label: 'Capitalisation',      icon: DollarSign },
+  { id: 'fx-rates',       label: 'Taux de Change',      icon: Globe },
+  { id: 'sector-volumes', label: 'Volumes sectoriels',  icon: BarChart2 },
+  { id: 'news',           label: 'Actualités',          icon: Newspaper },
+]
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -539,35 +550,30 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
 
-      {/* ── Main ── */}
-      <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <ModuleLayout pageKey="dashboard" sections={SECTIONS}>
+        <div className="p-4 lg:p-6 space-y-4">
 
         {/* Summary strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {[
-            { label: 'Vol. Total',       value: '198 764',  sub: 'titres échangés',    color: 'text-foreground'  },
-            { label: 'Hausses',          value: '28',       sub: 'valeurs en hausse',  color: 'text-emerald-500' },
-            { label: 'Baisses',          value: '15',       sub: 'valeurs en baisse',  color: 'text-red-400'     },
-            { label: 'Capitalisation',   value: '7 962',    sub: 'Mrd XOF total',      color: 'text-primary'     },
-          ].map(s => (
-            <div key={s.label} className="p-3 rounded-xl bg-card/60 border border-border/50 hover:border-border transition-colors">
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</div>
-              <div className={cn('text-2xl font-black font-mono mt-1', s.color)}>{s.value}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Drag hint */}
-        <p className="text-[10px] text-muted-foreground/60 mb-3 flex items-center gap-1.5">
-          <GripVertical className="w-3 h-3" />
-          Glissez les widgets pour réorganiser votre tableau de bord
-        </p>
+        <ModuleSection pageKey="dashboard" id="summary" resizable={false}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { label: 'Vol. Total',       value: '198 764',  sub: 'titres échangés',    color: 'text-foreground'  },
+              { label: 'Hausses',          value: '28',       sub: 'valeurs en hausse',  color: 'text-emerald-500' },
+              { label: 'Baisses',          value: '15',       sub: 'valeurs en baisse',  color: 'text-red-400'     },
+              { label: 'Capitalisation',   value: '7 962',    sub: 'Mrd XOF total',      color: 'text-primary'     },
+            ].map(s => (
+              <div key={s.label} className="p-3 rounded-xl bg-card/60 border border-border/50 hover:border-border transition-colors">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label} ({s.sub})</div>
+                <div className={cn('text-2xl font-black font-mono mt-1', s.color)}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        </ModuleSection>
 
         {/* Widget grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 auto-rows-min">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 auto-rows-min">
           {order.map(id => {
             const meta = WIDGET_META[id]
             const Icon = meta.icon
@@ -575,19 +581,19 @@ export default function DashboardPage() {
             const isDragTarget = dragOver === id && dragging !== id
 
             return (
-              <div
+              <ModuleSection
                 key={id}
-                draggable
-                onDragStart={() => handleDragStart(id)}
-                onDragOver={e => handleDragOver(e, id)}
-                onDrop={() => handleDrop(id)}
-                onDragEnd={handleDragEnd}
-                className={cn(
-                  meta.colSpan === 2 && 'md:col-span-2',
-                  'transition-all duration-150',
-                )}
+                pageKey="dashboard"
+                id={id}
+                resizable={false}
+                className={cn(meta.colSpan === 2 && 'md:col-span-2')}
               >
                 <div
+                  draggable
+                  onDragStart={() => handleDragStart(id)}
+                  onDragOver={e => handleDragOver(e, id)}
+                  onDrop={() => handleDrop(id)}
+                  onDragEnd={handleDragEnd}
                   className={cn(
                     'rounded-xl border bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden h-full transition-all duration-200',
                     isDraggingThis && 'opacity-40 scale-[0.98] shadow-none',
@@ -607,11 +613,13 @@ export default function DashboardPage() {
                     {renderWidgetContent(id)}
                   </div>
                 </div>
-              </div>
+              </ModuleSection>
             )
           })}
         </div>
-      </main>
+
+        </div>
+      </ModuleLayout>
 
       {/* ── Footer ── */}
       <footer className="border-t border-border/30 py-2.5 px-6 flex items-center justify-between text-[10px] text-muted-foreground bg-card/30 backdrop-blur-sm shrink-0">

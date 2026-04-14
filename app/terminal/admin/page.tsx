@@ -8,6 +8,16 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminUsers, auditLog, dataSources, type AdminUser, type UserRole } from '@/lib/mock-data'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+
+const SECTIONS: SectionDef[] = [
+  { id: 'kpis',        label: 'Indicateurs clés',  icon: Activity },
+  { id: 'users',       label: 'Utilisateurs',       icon: Users },
+  { id: 'sources',     label: 'Sources données',    icon: Database },
+  { id: 'audit',       label: 'Journal d\'audit',   icon: FileText },
+  { id: 'permissions', label: 'Permissions',        icon: Shield },
+  { id: 'system',      label: 'Statut système',     icon: Activity },
+]
 
 function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
@@ -96,32 +106,34 @@ export default function AdminPage() {
         </span>
       </div>
 
-      <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <ModuleLayout pageKey="admin" sections={SECTIONS}>
+        <div className="p-4 lg:p-6 space-y-4">
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          {[
-            { label: 'Utilisateurs actifs', value: activeUsers, icon: Users, color: 'text-emerald-500' },
-            { label: 'Connexions aujourd\'hui', value: 47, icon: Activity, color: 'text-blue-400' },
-            { label: 'Sources actives', value: activeSources, icon: Database, color: 'text-primary' },
-            { label: 'Alertes système', value: 2, icon: AlertTriangle, color: 'text-yellow-500' },
-          ].map(k => (
-            <div key={k.label} className="rounded-xl border border-border/50 bg-card/80 p-4 flex items-center gap-3">
-              <div className={cn('p-2.5 rounded-lg bg-secondary/50', k.color)}>
-                <k.icon className="w-5 h-5" />
+        <ModuleSection pageKey="admin" id="kpis" resizable={false}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Utilisateurs actifs', value: activeUsers, icon: Users, color: 'text-emerald-500' },
+              { label: 'Connexions aujourd\'hui', value: 47, icon: Activity, color: 'text-blue-400' },
+              { label: 'Sources actives', value: activeSources, icon: Database, color: 'text-primary' },
+              { label: 'Alertes système', value: 2, icon: AlertTriangle, color: 'text-yellow-500' },
+            ].map(k => (
+              <div key={k.label} className="rounded-xl border border-border/50 bg-card/80 p-4 flex items-center gap-3">
+                <div className={cn('p-2.5 rounded-lg bg-secondary/50', k.color)}>
+                  <k.icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">{k.label}</div>
+                  <div className="text-xl font-bold font-mono text-foreground">{k.value}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-xs text-muted-foreground">{k.label}</div>
-                <div className="text-xl font-bold font-mono text-foreground">{k.value}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ModuleSection>
 
         <div className="grid xl:grid-cols-3 gap-4">
 
           {/* User Management — 2 cols */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="admin" id="users" className="xl:col-span-2">
             <SectionCard icon={Users} title="Gestion des utilisateurs">
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <div className="relative flex-1 min-w-40">
@@ -187,10 +199,10 @@ export default function AdminPage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Data Sources — 1 col */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="admin" id="sources" className="xl:col-span-1">
             <SectionCard icon={Database} title="Sources de données">
               <div className="space-y-2">
                 {dataSources.map(s => (
@@ -219,10 +231,10 @@ export default function AdminPage() {
                 ))}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Audit Log — full width */}
-          <div className="xl:col-span-3">
+          <ModuleSection pageKey="admin" id="audit" className="xl:col-span-3">
             <SectionCard icon={FileText} title="Journal d'audit">
               <div className="overflow-auto">
                 <table className="w-full text-xs border-collapse">
@@ -278,10 +290,10 @@ export default function AdminPage() {
                 </button>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Permissions Matrix — 2 cols */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="admin" id="permissions" className="xl:col-span-2">
             <SectionCard icon={Shield} title="Matrice des permissions">
               <div className="overflow-auto">
                 <table className="w-full text-xs border-collapse">
@@ -322,10 +334,10 @@ export default function AdminPage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* System Status — 1 col */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="admin" id="system" className="xl:col-span-1">
             <SectionCard icon={Activity} title="Statut système">
               <div className="space-y-3">
                 {[
@@ -363,10 +375,12 @@ export default function AdminPage() {
                 </div>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
         </div>
-      </main>
+
+        </div>
+      </ModuleLayout>
 
       <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
         <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Administration Back-office</span>

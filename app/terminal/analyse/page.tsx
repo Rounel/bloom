@@ -13,6 +13,15 @@ import {
   brvmStocks, marketIndices, generateStockHistory,
   companyProfiles, financialRatios, countryRiskCards,
 } from '@/lib/mock-data'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+
+const SECTIONS: SectionDef[] = [
+  { id: 'technical',     label: 'Analyse Technique',    icon: Activity },
+  { id: 'fundamentals',  label: 'Analyse Fondamentale', icon: BarChart2 },
+  { id: 'ratios',        label: 'Ratios financiers',    icon: BarChart2 },
+  { id: 'risk-scorecard',label: 'Risques Souverains',   icon: ShieldAlert },
+  { id: 'ratings',       label: 'Notations UEMOA',      icon: Globe },
+]
 
 // ─── Technical indicator functions ───────────────────────────────────────────
 
@@ -180,30 +189,12 @@ export default function AnalysePage() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      {/* <header className="h-14 border-b flex items-center px-6 bg-card/50 backdrop-blur-sm gap-4 shrink-0">
-        <Link href="/modules" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">Modules</span>
-        </Link>
-        <div className="h-5 w-px bg-border/50" />
-        <div className="flex items-center gap-2">
-          <BarChart2 className="w-5 h-5 text-primary" />
-          <span className="font-bold text-base">Analyse Financière & Risque</span>
-          <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">Module 3</span>
-        </div>
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="w-3.5 h-3.5" />
-          {time}
-        </div>
-      </header> */}
-
-      {/* <TickerBar /> */}
-
-      <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <ModuleLayout pageKey="analyse" sections={SECTIONS}>
+        <div className="p-4 lg:p-6">
         <div className="grid xl:grid-cols-3 gap-4">
 
           {/* Technical Analysis — 2 cols */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="analyse" id="technical" className="xl:col-span-2">
             <SectionCard icon={Activity} title="Analyse Technique">
               <div className="flex items-center gap-2 mb-3">
                 <select
@@ -275,10 +266,10 @@ export default function AnalysePage() {
                 </ResponsiveContainer>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Fundamentals — 1 col */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="analyse" id="fundamentals" className="xl:col-span-1">
             <SectionCard icon={BarChart2} title="Analyse Fondamentale">
               <select
                 value={fundSymbol}
@@ -315,10 +306,10 @@ export default function AnalysePage() {
                 </ResponsiveContainer>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Ratios table — 2 cols */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="analyse" id="ratios" className="xl:col-span-2">
             <SectionCard icon={BarChart2} title="Ratios financiers comparatifs">
               <div className="flex flex-wrap gap-1 mb-3">
                 {sectors.map(s => (
@@ -374,10 +365,10 @@ export default function AnalysePage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Risk Scorecard — 1 col */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="analyse" id="risk-scorecard" className="xl:col-span-1">
             <SectionCard icon={ShieldAlert} title="Scorecard Risques Souverains">
               <div className="flex flex-wrap gap-1 mb-3">
                 {countryRiskCards.map(c => (
@@ -429,10 +420,10 @@ export default function AnalysePage() {
                 </ResponsiveContainer>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Sovereign ratings table — full width */}
-          <div className="xl:col-span-3">
+          <ModuleSection pageKey="analyse" id="ratings" className="xl:col-span-3">
             <SectionCard icon={Globe} title="Notations souveraines UEMOA">
               <div className="overflow-auto">
                 <table className="w-full text-xs border-collapse">
@@ -490,10 +481,11 @@ export default function AnalysePage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
         </div>
-      </main>
+        </div>
+      </ModuleLayout>
 
       <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
         <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 3 — Analyse Financière & Risque</span>

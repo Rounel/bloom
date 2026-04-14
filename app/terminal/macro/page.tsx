@@ -9,6 +9,15 @@ import { cn } from '@/lib/utils'
 import {
   brvmStocks, marketIndices, macroIndicators, publicFinances, tradeData, regionalRankings,
 } from '@/lib/mock-data'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+
+const SECTIONS: SectionDef[] = [
+  { id: 'kpis',       label: 'Indicateurs clés',      icon: BarChart2 },
+  { id: 'indicators', label: 'Indicateurs macro',      icon: Globe },
+  { id: 'rankings',   label: 'Classement régional',    icon: Map },
+  { id: 'finances',   label: 'Finances publiques',     icon: Landmark },
+  { id: 'trade',      label: 'Commerce extérieur',     icon: ShoppingCart },
+]
 
 function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
@@ -33,21 +42,24 @@ export default function MacroPage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
 
-      <main className="flex-1 p-4 lg:p-6 overflow-auto">
-        {/* Top indicators */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          {macroIndicators.slice(0, 4).map(ind => (
-            <div key={ind.country} className="rounded-xl border border-border/50 bg-card/80 p-4">
-              <div className="text-xs text-muted-foreground mb-1">{ind.country}</div>
-              <div className="text-sm font-bold text-foreground">PIB: <span className="font-mono text-emerald-500">{ind.gdpGrowth.toFixed(1)}%</span></div>
-              <div className="text-xs text-muted-foreground mt-0.5">Inflation: <span className="font-mono text-foreground">{ind.inflation.toFixed(1)}%</span></div>
-            </div>
-          ))}
-        </div>
+      <ModuleLayout pageKey="macro" sections={SECTIONS}>
+        <div className="p-4 lg:p-6 space-y-4">
+
+        <ModuleSection pageKey="macro" id="kpis" resizable={false}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {macroIndicators.slice(0, 4).map(ind => (
+              <div key={ind.country} className="rounded-xl border border-border/50 bg-card/80 p-4">
+                <div className="text-xs text-muted-foreground mb-1">{ind.country}</div>
+                <div className="text-sm font-bold text-foreground">PIB: <span className="font-mono text-emerald-500">{ind.gdpGrowth.toFixed(1)}%</span></div>
+                <div className="text-xs text-muted-foreground mt-0.5">Inflation: <span className="font-mono text-foreground">{ind.inflation.toFixed(1)}%</span></div>
+              </div>
+            ))}
+          </div>
+        </ModuleSection>
 
         <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4">
           {/* Macro indicators table */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="macro" id="indicators" className="xl:col-span-2">
             <SectionCard icon={Globe} title="Indicateurs macroéconomiques UEMOA">
               <div className="overflow-auto">
                 <table className="w-full text-xs border-collapse">
@@ -82,10 +94,10 @@ export default function MacroPage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Regional rankings */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="macro" id="rankings" className="xl:col-span-1">
             <SectionCard icon={Map} title="Classement régional">
               <div className="space-y-2">
                 {regionalRankings.map(r => (
@@ -105,10 +117,10 @@ export default function MacroPage() {
                 ))}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Public Finances */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="macro" id="finances" className="xl:col-span-2">
             <SectionCard icon={Landmark} title="Finances publiques">
               <div className="overflow-auto">
                 <table className="w-full text-xs border-collapse">
@@ -141,10 +153,10 @@ export default function MacroPage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Trade balance */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="macro" id="trade" className="xl:col-span-1">
             <SectionCard icon={ShoppingCart} title="Commerce extérieur">
               <div className="space-y-2">
                 {tradeData.slice(0, 5).map(tb => (
@@ -163,10 +175,11 @@ export default function MacroPage() {
                 ))}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
         </div>
 
-      </main>
+        </div>
+      </ModuleLayout>
 
       <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
         <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 4 — Données Macroéconomiques</span>

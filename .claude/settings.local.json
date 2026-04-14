@@ -3,7 +3,8 @@
     "allow": [
       "Bash(wc -l /c/Users/USER/Documents/imako/bloom-v0/components/dashboard/panels/*.tsx)",
       "Bash(npm run:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

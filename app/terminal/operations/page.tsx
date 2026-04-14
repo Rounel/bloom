@@ -17,6 +17,7 @@ import {
   currencyRates, commodities, newsItems, tvPrograms,
   sovereignYields, generateStockHistory,
 } from '@/lib/mock-data'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
 
 // ─── Section IDs ──────────────────────────────────────────────────────────────
 
@@ -38,70 +39,24 @@ type SectionId =
   | 'actualites'
   | 'web-tv'
 
-interface SidebarItem {
-  id: SectionId
-  label: string
-  description: string
-  icon: React.ElementType
-}
-
-interface SidebarGroup {
-  id: string
-  label: string
-  icon: React.ElementType
-  items: SidebarItem[]
-}
-
-const SIDEBAR_GROUPS: SidebarGroup[] = [
-  {
-    id: 'marches', label: 'Marchés Boursiers', icon: BarChart2,
-    items: [
-      { id: 'indices-africains',   label: 'Indices Africains',    description: 'BRVM, NGX, GSE, JSE',        icon: Globe },
-      { id: 'cours-brvm',          label: 'Cours & Graphique',    description: 'Intraday sélectionné',        icon: LineChart },
-      { id: 'heatmap-sectorielle', label: 'Heatmap Sectorielle',  description: 'Performance par secteur',     icon: Flame },
-      { id: 'cotations-brvm',      label: 'Cotations BRVM',       description: 'Tableau temps réel + sparklines', icon: Activity },
-    ],
-  },
-  {
-    id: 'taux', label: 'Taux Souverains', icon: Activity,
-    items: [
-      { id: 'courbes-taux',    label: 'Courbes des Taux',      description: 'UEMOA multi-pays',           icon: TrendingUp },
-      { id: 'spreads-maturite', label: 'Spreads par Maturité', description: 'Points de base vs CI',        icon: BarChart2 },
-    ],
-  },
-  {
-    id: 'devises', label: 'Devises', icon: DollarSign,
-    items: [
-      { id: 'devises-graphique', label: 'Paires & Graphique',  description: 'Historique 60 jours',        icon: TrendingUp },
-      { id: 'devises-tableau',   label: 'Tableau des Paires',  description: 'Toutes les paires FX',       icon: BarChart2 },
-    ],
-  },
-  {
-    id: 'matieres', label: 'Matières Premières', icon: Package,
-    items: [
-      { id: 'matieres-prix',  label: 'Prix Spot',              description: 'Cacao, pétrole, or…',        icon: Package },
-      { id: 'matieres-perf',  label: 'Perf. par Catégorie',   description: 'Agricole, énergie, métaux',   icon: BarChart2 },
-    ],
-  },
-  {
-    id: 'performances', label: 'Performances Marchés', icon: TrendingUp,
-    items: [
-      { id: 'top-movers',    label: 'Top Hausses / Baisses',  description: 'Meilleures & pires perf.',    icon: TrendingUp },
-      { id: 'most-traded',   label: 'Plus Échangés',          description: 'Volumes du jour',             icon: Activity },
-      { id: 'sector-trends', label: 'Tendances Sectorielles', description: 'Perf. par secteur',           icon: Flame },
-    ],
-  },
-  {
-    id: 'flashinfo', label: 'Flash Info & Web TV', icon: Radio,
-    items: [
-      { id: 'flash-alerts', label: 'Alertes Flash',    description: 'Actualités critiques',         icon: AlertTriangle },
-      { id: 'actualites',   label: 'Actualités',       description: 'Fil d\'informations en direct', icon: Newspaper },
-      { id: 'web-tv',       label: 'Web TV',           description: 'Programmes & décryptages',      icon: Tv },
-    ],
-  },
+const SECTIONS: SectionDef[] = [
+  { id: 'indices-africains',   label: 'Indices Africains',    icon: Globe },
+  { id: 'cours-brvm',          label: 'Cours & Graphique',    icon: Activity },
+  { id: 'heatmap-sectorielle', label: 'Heatmap Sectorielle',  icon: Flame },
+  { id: 'cotations-brvm',      label: 'Cotations BRVM',       icon: BarChart2 },
+  { id: 'courbes-taux',        label: 'Courbes des Taux',     icon: TrendingUp },
+  { id: 'spreads-maturite',    label: 'Spreads Maturité',     icon: BarChart2 },
+  { id: 'devises-graphique',   label: 'Paires & Graphique',   icon: TrendingUp },
+  { id: 'devises-tableau',     label: 'Tableau FX',           icon: DollarSign },
+  { id: 'matieres-prix',       label: 'Prix Spot',            icon: Package },
+  { id: 'matieres-perf',       label: 'Perf. Matières',       icon: BarChart2 },
+  { id: 'top-movers',          label: 'Top Movers',           icon: TrendingUp },
+  { id: 'most-traded',         label: 'Plus Échangés',        icon: Activity },
+  { id: 'sector-trends',       label: 'Tendances Sect.',      icon: Flame },
+  { id: 'flash-alerts',        label: 'Alertes Flash',        icon: AlertTriangle },
+  { id: 'actualites',          label: 'Actualités',           icon: Newspaper },
+  { id: 'web-tv',              label: 'Web TV',               icon: Tv },
 ]
-
-const DEFAULT_SECTIONS: SectionId[] = ['indices-africains', 'cotations-brvm', 'top-movers', 'actualites']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -125,14 +80,9 @@ function ChangeChip({ value, size = 'sm' }: { value: number; size?: 'xs' | 'sm' 
   )
 }
 
-function SectionCard({ id, onClose, children }: { id: SectionId; onClose: (id: SectionId) => void; children: React.ReactNode }) {
+function SectionCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
-      <div className="flex items-center justify-end px-3 py-1.5 border-b border-border/50 bg-secondary/10">
-        <button onClick={() => onClose(id)} className="p-0.5 rounded hover:bg-secondary/70 text-muted-foreground hover:text-foreground transition-colors">
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
       <div className="flex-1 overflow-auto">
         {children}
       </div>
@@ -693,184 +643,26 @@ function renderSection(id: SectionId) {
   }
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-
-function Sidebar({
-  active,
-  onToggle,
-  collapsed,
-  onCollapse,
-}: {
-  active: Set<SectionId>
-  onToggle: (id: SectionId) => void
-  collapsed: boolean
-  onCollapse: () => void
-}) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(SIDEBAR_GROUPS.map(g => g.id)))
-
-  function toggleGroup(id: string) {
-    setExpanded(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  return (
-    <aside className={cn(
-      'h-full bg-card border-r border-sidebar-border flex flex-col transition-all duration-300 shrink-0',
-      collapsed ? 'w-14' : 'w-60',
-    )}>
-      {/* Header */}
-      <div className={cn('h-10 flex items-center border-b border-sidebar-border px-3', collapsed ? 'justify-center' : 'justify-between')}>
-        {!collapsed && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sections</span>}
-        <button onClick={onCollapse} className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground">
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2">
-        {SIDEBAR_GROUPS.map(group => {
-          const isExpanded = expanded.has(group.id)
-          const activeCount = group.items.filter(i => active.has(i.id)).length
-          const GroupIcon = group.icon
-
-          return (
-            <div key={group.id} className="mb-1">
-              {/* Group header */}
-              <button
-                onClick={() => !collapsed && toggleGroup(group.id)}
-                title={collapsed ? group.label : undefined}
-                className={cn(
-                  'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-sidebar-accent/50',
-                  collapsed && 'justify-center',
-                )}
-              >
-                {collapsed ? (
-                  <div className="relative">
-                    <GroupIcon className="w-4 h-4 text-muted-foreground" />
-                    {activeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary text-primary-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
-                        {activeCount}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <GroupIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <span className="flex-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{group.label}</span>
-                    {activeCount > 0 && (
-                      <span className="w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">{activeCount}</span>
-                    )}
-                    <ChevronDown className={cn('w-3 h-3 text-muted-foreground shrink-0 transition-transform', !isExpanded && '-rotate-90')} />
-                  </>
-                )}
-              </button>
-
-              {/* Items */}
-              {(isExpanded || collapsed) && (
-                <div className={cn('space-y-0.5 px-1.5', collapsed && 'px-1')}>
-                  {group.items.map(item => {
-                    const Icon = item.icon
-                    const isActive = active.has(item.id)
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => onToggle(item.id)}
-                        title={collapsed ? item.label : undefined}
-                        className={cn(
-                          'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-colors group',
-                          'hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground',
-                          isActive && 'bg-sidebar-accent/60',
-                          collapsed && 'justify-center px-2',
-                        )}
-                      >
-                        <Icon className={cn('w-3.5 h-3.5 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
-                        {!collapsed && (
-                          <div className="flex-1 min-w-0">
-                            <div className={cn('text-xs font-medium truncate', isActive && 'text-primary')}>{item.label}</div>
-                            <div className="text-[10px] text-muted-foreground truncate">{item.description}</div>
-                          </div>
-                        )}
-                        {!collapsed && (
-                          <div className={cn('w-2 h-2 rounded-full shrink-0 transition-colors', isActive ? 'bg-primary' : 'bg-transparent')} />
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </nav>
-
-      {/* Active count */}
-      {!collapsed && (
-        <div className="px-4 py-3 border-t border-sidebar-border">
-          <p className="text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground">{active.size}</span> section{active.size !== 1 ? 's' : ''} affichée{active.size !== 1 ? 's' : ''}
-          </p>
-        </div>
-      )}
-    </aside>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OperationsPage() {
-  const [active, setActive] = useState<Set<SectionId>>(new Set(DEFAULT_SECTIONS))
-  const [collapsed, setCollapsed] = useState(false)
-
-  function toggleSection(id: SectionId) {
-    setActive(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  // All sections in sidebar order (for stable rendering)
-  const allItems = SIDEBAR_GROUPS.flatMap(g => g.items)
-  const activeSections = allItems.filter(item => active.has(item.id))
-
   return (
-    <div className="flex h-full bg-background overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        active={active}
-        onToggle={toggleSection}
-        collapsed={collapsed}
-        onCollapse={() => setCollapsed(c => !c)}
-      />
-
-      {/* Workspace */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {activeSections.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center gap-3">
-            <LayoutGrid className="w-12 h-12 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-muted-foreground">Aucune section affichée</p>
-            <p className="text-xs text-muted-foreground/70">Cliquez sur une section dans la barre latérale pour l'afficher.</p>
-          </div>
-        ) : (
-          <div className="columns-1 xl:columns-2 gap-4 space-y-4">
-            {activeSections.map(item => (
-              <div key={item.id} className="break-inside-avoid mb-4">
-                <SectionCard id={item.id} onClose={toggleSection}>
-                  {/* Section header */}
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
-                    <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id]}</span>
-                  </div>
-                  {renderSection(item.id)}
-                </SectionCard>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      <ModuleLayout pageKey="operations" sections={SECTIONS}>
+        <div className="p-4 columns-1 xl:columns-2 gap-4">
+          {SECTIONS.map(item => (
+            <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false} className="break-inside-avoid mb-4">
+              <SectionCard>
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
+                  <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
+                </div>
+                {renderSection(item.id as SectionId)}
+              </SectionCard>
+            </ModuleSection>
+          ))}
+        </div>
+      </ModuleLayout>
     </div>
   )
 }

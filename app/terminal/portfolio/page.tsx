@@ -17,6 +17,18 @@ import {
   watchlistItems, orderHistory,
   type PortfolioHolding, type WatchlistItem,
 } from '@/lib/mock-data'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+
+const SECTIONS: SectionDef[] = [
+  { id: 'kpis',        label: 'Indicateurs clés',     icon: Wallet },
+  { id: 'holdings',    label: 'Positions',             icon: BarChart2 },
+  { id: 'allocation',  label: 'Répartition',           icon: Eye },
+  { id: 'performance', label: 'Performance',           icon: TrendingUp },
+  { id: 'risk',        label: 'Métriques de risque',   icon: ShieldCheck },
+  { id: 'simulator',   label: 'Simulateur d\'ordres',  icon: ArrowUpDown },
+  { id: 'watchlist',   label: 'Surveillance',          icon: Star },
+  { id: 'orders',      label: 'Historique ordres',     icon: Clock },
+]
 
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
@@ -100,26 +112,29 @@ export default function PortfolioPage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
 
-      <main className="flex-1 p-4 lg:p-6 overflow-auto">
-        {/* Summary KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          {[
-            { label: 'Valeur totale', value: totalValue.toLocaleString('fr-FR') + ' FCFA', positive: true },
-            { label: 'P&L total', value: (totalPnl >= 0 ? '+' : '') + totalPnl.toLocaleString('fr-FR') + ' FCFA', positive: totalPnl >= 0, sub: `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%` },
-            { label: 'Variation jour', value: (dayChange >= 0 ? '+' : '') + dayChange.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' FCFA', positive: dayChange >= 0 },
-            { label: 'Beta portefeuille', value: beta.toFixed(2), positive: beta <= 1, sub: beta <= 1 ? 'Défensif' : 'Agressif' },
-          ].map(k => (
-            <div key={k.label} className="rounded-xl border border-border/50 bg-card/80 p-4">
-              <div className="text-xs text-muted-foreground mb-1">{k.label}</div>
-              <div className={cn('font-bold text-lg font-mono', k.positive ? 'text-emerald-500' : 'text-red-400')}>{k.value}</div>
-              {k.sub && <div className="text-[11px] text-muted-foreground">{k.sub}</div>}
-            </div>
-          ))}
-        </div>
+      <ModuleLayout pageKey="portfolio" sections={SECTIONS}>
+        <div className="p-4 lg:p-6 space-y-4">
+
+        <ModuleSection pageKey="portfolio" id="kpis" resizable={false}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Valeur totale', value: totalValue.toLocaleString('fr-FR') + ' FCFA', positive: true },
+              { label: 'P&L total', value: (totalPnl >= 0 ? '+' : '') + totalPnl.toLocaleString('fr-FR') + ' FCFA', positive: totalPnl >= 0, sub: `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%` },
+              { label: 'Variation jour', value: (dayChange >= 0 ? '+' : '') + dayChange.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' FCFA', positive: dayChange >= 0 },
+              { label: 'Beta portefeuille', value: beta.toFixed(2), positive: beta <= 1, sub: beta <= 1 ? 'Défensif' : 'Agressif' },
+            ].map(k => (
+              <div key={k.label} className="rounded-xl border border-border/50 bg-card/80 p-4">
+                <div className="text-xs text-muted-foreground mb-1">{k.label}</div>
+                <div className={cn('font-bold text-lg font-mono', k.positive ? 'text-emerald-500' : 'text-red-400')}>{k.value}</div>
+                {k.sub && <div className="text-[11px] text-muted-foreground">{k.sub}</div>}
+              </div>
+            ))}
+          </div>
+        </ModuleSection>
 
         <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4">
           {/* Holdings table — 2 cols */}
-          <div className="xl:col-span-2 md:col-span-2">
+          <ModuleSection pageKey="portfolio" id="holdings" className="xl:col-span-2 md:col-span-2">
             <SectionCard icon={BarChart2} title="Positions en portefeuille">
               <div className="overflow-auto">
                 <table className="w-full text-xs border-collapse">
@@ -172,10 +187,10 @@ export default function PortfolioPage() {
                 </table>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Allocation pie */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="portfolio" id="allocation" className="xl:col-span-1">
             <SectionCard icon={Eye} title="Répartition du portefeuille">
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -197,10 +212,10 @@ export default function PortfolioPage() {
                 </ResponsiveContainer>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Performance chart — 2 cols */}
-          <div className="xl:col-span-2">
+          <ModuleSection pageKey="portfolio" id="performance" className="xl:col-span-2">
             <SectionCard icon={TrendingUp} title="Performance vs BRVM Composite">
               <div className="flex justify-end gap-1 mb-2">
                 {(['3M', '6M', '1A'] as const).map(r => (
@@ -240,10 +255,10 @@ export default function PortfolioPage() {
                 </ResponsiveContainer>
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Risk metrics */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="portfolio" id="risk" className="xl:col-span-1">
             <SectionCard icon={ShieldCheck} title="Métriques de risque">
               <div className="grid grid-cols-2 gap-2">
                 {[
@@ -263,10 +278,10 @@ export default function PortfolioPage() {
                 ))}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Order simulator */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="portfolio" id="simulator" className="xl:col-span-1">
             <SectionCard icon={BarChart2} title="Simulateur d'ordres">
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
@@ -344,10 +359,10 @@ export default function PortfolioPage() {
                 )}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Watchlist */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="portfolio" id="watchlist" className="xl:col-span-1">
             <SectionCard icon={Star} title="Liste de surveillance">
               <div className="space-y-2">
                 {watchlistItems.map(w => (
@@ -382,10 +397,10 @@ export default function PortfolioPage() {
                 ))}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Order history */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="portfolio" id="orders" className="xl:col-span-1">
             <SectionCard icon={Clock} title="Historique des ordres">
               <div className="space-y-2">
                 {orderHistory.slice(0, 5).map(o => (
@@ -415,9 +430,11 @@ export default function PortfolioPage() {
                 ))}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
         </div>
-      </main>
+
+        </div>
+      </ModuleLayout>
 
       <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
         <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 2 — Gestion de Portefeuille</span>

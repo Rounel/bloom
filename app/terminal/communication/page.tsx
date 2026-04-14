@@ -11,6 +11,14 @@ import {
   brvmStocks, marketIndices, newsItems, moreNewsItems, priceAlerts, educationArticles, webinars,
   type PriceAlert,
 } from '@/lib/mock-data'
+import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+
+const SECTIONS: SectionDef[] = [
+  { id: 'news',      label: 'Actualités',    icon: Newspaper },
+  { id: 'alerts',    label: 'Alertes prix',  icon: Bell },
+  { id: 'web-tv',    label: 'Web TV',        icon: Radio },
+  { id: 'education', label: 'Éducation',     icon: BookOpen },
+]
 
 function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
@@ -82,11 +90,12 @@ export default function CommunicationPage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
 
-      <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <ModuleLayout pageKey="communication" sections={SECTIONS}>
+        <div className="p-4 lg:p-6">
         <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4">
 
           {/* News Center */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="communication" id="news" className="xl:col-span-1">
             <SectionCard icon={Newspaper} title="Centre d'actualités">
               {/* Search */}
               <div className="relative mb-2">
@@ -146,10 +155,10 @@ export default function CommunicationPage() {
                 )}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Alerts */}
-          <div className="xl:col-span-1">
+          <ModuleSection pageKey="communication" id="alerts" className="xl:col-span-1">
             <SectionCard icon={Bell} title="Gestionnaire d'alertes prix">
               <div className="space-y-2 max-h-96 overflow-auto">
                 {alerts.map(a => (
@@ -199,10 +208,10 @@ export default function CommunicationPage() {
                 )}
               </div>
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Web TV — full width */}
-          <div className="xl:col-span-3 md:col-span-2">
+          <ModuleSection pageKey="communication" id="web-tv" className="xl:col-span-3 md:col-span-2">
             <SectionCard icon={Radio} title="Bloomfield Web TV">
               {/* Tabs */}
               <div className="flex gap-1 bg-secondary/30 rounded-lg p-1 w-fit mb-4">
@@ -305,10 +314,10 @@ export default function CommunicationPage() {
                 </div>
               )}
             </SectionCard>
-          </div>
+          </ModuleSection>
 
           {/* Education — full width */}
-          <div className="xl:col-span-3 md:col-span-2">
+          <ModuleSection pageKey="communication" id="education" className="xl:col-span-3 md:col-span-2">
             <SectionCard icon={BookOpen} title="Espace Éducatif">
               <div className="flex gap-1 bg-secondary/30 rounded-lg p-1 w-fit mb-4">
                 {(['articles', 'webinaires', 'glossaire'] as const).map(t => (
@@ -407,10 +416,11 @@ export default function CommunicationPage() {
                 </div>
               )}
             </SectionCard>
-          </div>
+          </ModuleSection>
 
         </div>
-      </main>
+        </div>
+      </ModuleLayout>
 
       <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
         <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 5 — Communication & Éducation</span>

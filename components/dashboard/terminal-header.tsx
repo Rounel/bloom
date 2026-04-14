@@ -9,7 +9,6 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  Shield,
   HelpCircle,
   BarChart3,
   Menu,
@@ -17,10 +16,19 @@ import {
   Moon,
   UserCircle,
   KeyRound,
+  Wallet,
+  TrendingUp,
+  Globe,
+  Microscope,
+  Radio,
+  GripHorizontal,
 } from 'lucide-react'
 import { useDashboardStore } from '@/lib/dashboard-store'
+import { useSplitStore } from '@/lib/split-store'
+import { MODULE_DRAG_TYPE } from '@/components/dashboard/split-workspace'
 import { TickerBar } from '@/components/dashboard/ticker-bar'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +38,55 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 
+// ── Draggable nav link ────────────────────────────────────────────────────────
+
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  onDragStart,
+  onDragEnd,
+}: {
+  href: string
+  label: string
+  icon: React.ElementType
+  onDragStart: (e: React.DragEvent) => void
+  onDragEnd: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={cn(
+        'group flex items-center gap-2 px-3 py-1.5 text-xs font-medium',
+        'text-foreground hover:bg-secondary/50 rounded-md transition-colors',
+        'cursor-grab active:cursor-grabbing select-none',
+      )}
+      title={`Cliquer pour naviguer · Glisser pour diviser l'écran`}
+    >
+      <GripHorizontal className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors shrink-0" />
+      <Icon className="w-3.5 h-3.5 shrink-0" />
+      {label}
+    </Link>
+  )
+}
+
+// ── Nav items config ──────────────────────────────────────────────────────────
+
+const NAV_ITEMS = [
+  { href: '/terminal/dashboard',     label: 'Dashboard',                icon: BarChart3    },
+  { href: '/terminal/portfolio',     label: 'Portefeuille',             icon: Wallet       },
+  { href: '/terminal/operations',    label: 'Opérations Boursières',    icon: TrendingUp   },
+  { href: '/terminal/macro',         label: 'Données Macroéconomiques', icon: Globe        },
+  { href: '/terminal/analyse',       label: 'Analyse Financière',       icon: Microscope   },
+  { href: '/terminal/communication', label: 'Communication & Éducation',icon: Radio        },
+  { href: '/terminal/admin',         label: 'Paramétrage',              icon: Settings     },
+] as const
+
+// ── TerminalHeader ────────────────────────────────────────────────────────────
+
 interface TerminalHeaderProps {
   onSearchOpen?: () => void
 }
@@ -38,6 +95,7 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
   const [notifications] = useState(3)
   const [isDark, setIsDark] = useState(true)
   const { setSidebarOpen } = useDashboardStore()
+  const { setIsDraggingModule } = useSplitStore()
 
   // ⌘K / Ctrl+K global shortcut
   useEffect(() => {
@@ -60,6 +118,15 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
       html.classList.remove('dark')
     }
   }, [isDark])
+
+  const makeDragHandlers = (href: string, label: string) => ({
+    onDragStart: (e: React.DragEvent) => {
+      e.dataTransfer.setData(MODULE_DRAG_TYPE, JSON.stringify({ href, label }))
+      e.dataTransfer.effectAllowed = 'copy'
+      setIsDraggingModule(true)
+    },
+    onDragEnd: () => setIsDraggingModule(false),
+  })
 
   return (
     <header className="bg-card border-b border-border shrink-0">
@@ -86,35 +153,16 @@ export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 ml-4">
-            <Link href="/terminal/dashboard" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <BarChart3 className="w-4 h-4" />
-              Dashboard
-            </Link>
-            <Link href="/terminal/portfolio" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <BarChart3 className="w-4 h-4" />
-              Portefeuille
-            </Link>
-            <Link href="/terminal/operations" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <BarChart3 className="w-4 h-4" />
-              Opérations Boursières
-            </Link>
-            <Link href="/terminal/macro" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <BarChart3 className="w-4 h-4" />
-              Données Macroéconomiques
-            </Link>
-            <Link href="/terminal/analyse" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <BarChart3 className="w-4 h-4" />
-              Analyse Financière
-            </Link>
-            <Link href="/terminal/communication" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <BarChart3 className="w-4 h-4" />
-              Communication & Éducation
-            </Link>
-            <Link href="/terminal/settings" className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/50 rounded-md transition-colors">
-              <Settings className="w-4 h-4" />
-              Paramétrage
-            </Link>
+          <nav className="hidden lg:flex items-center gap-0.5 ml-4">
+            {NAV_ITEMS.map(item => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                {...makeDragHandlers(item.href, item.label)}
+              />
+            ))}
           </nav>
         </div>
 
