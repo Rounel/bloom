@@ -575,6 +575,8 @@ export default function ModulesPage() {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const openInSlot = useCallback((slotId: string, moduleId: string) => {
+    // Reset drag overlay — the dragged tab unmounts before dragend fires, so we do it here
+    setIsDraggingTab(false)
     setSlots(prev => {
       // Prevent duplicate: if module already visible in another slot, do nothing
       if (prev.some(s => s.moduleId === moduleId)) return prev
@@ -622,6 +624,8 @@ export default function ModulesPage() {
 
   // Drag a minimized tab onto a module slot → add it to the split next to that slot
   const addToSplit = useCallback((moduleId: string, afterSlotId: string) => {
+    // Same race condition as openInSlot — reset drag overlay eagerly
+    setIsDraggingTab(false)
     setSlots(prev => {
       if (prev.some(s => s.moduleId === moduleId)) return prev
       const idx = prev.findIndex(s => s.id === afterSlotId)
@@ -681,6 +685,14 @@ export default function ModulesPage() {
   const cumulativeLefts = slots.reduce<number[]>((acc, s, i) => {
     const w = widths[s.id] ?? 100 / slots.length
     return i === 0 ? [w] : [...acc, (acc[i - 1] ?? 0) + w]
+  }, [])
+
+  // Safety net: dragend always fires on the source element, but if the element
+  // unmounted before React could route it, the document-level listener catches it.
+  useEffect(() => {
+    const reset = () => setIsDraggingTab(false)
+    document.addEventListener('dragend', reset)
+    return () => document.removeEventListener('dragend', reset)
   }, [])
 
   const isInitialHome = slots.length === 1 && slots[0].moduleId === null && minimized.length === 0

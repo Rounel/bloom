@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import {
   TrendingUp, TrendingDown, Search, Sun, Moon, X, Clock,
@@ -16,6 +17,7 @@ import {
 } from '@/lib/mock-data'
 import { TickerBar } from '@/components/dashboard/ticker-bar'
 import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+import { useModuleSectionsStore } from '@/lib/module-sections-store'
 
 const SECTIONS: SectionDef[] = [
   { id: 'summary',        label: 'Résumé du marché',   icon: Activity },
@@ -35,7 +37,6 @@ type WidgetId = 'indices' | 'top-movers' | 'sector-volumes' | 'market-cap' | 'fx
 
 const HISTORY_KEY = 'bloomfield-search-history'
 
-// Searchable items: stocks with mock ISIN
 const searchIndex = brvmStocks.map((s, i) => ({
   symbol: s.symbol,
   name: s.name,
@@ -487,6 +488,269 @@ function renderWidgetContent(id: WidgetId) {
   }
 }
 
+// ─── Row / grid computation ───────────────────────────────────────────────────
+
+function computeRows(order: WidgetId[], visibleIds: Set<WidgetId>): WidgetId[][] {
+  const rows: WidgetId[][] = []
+  let current: WidgetId[] = []
+  let cols = 0
+  const MAX = 4
+
+  for (const id of order) {
+    if (!visibleIds.has(id)) continue
+    const span = WIDGET_META[id].colSpan
+    if (cols + span > MAX) {
+      if (current.length > 0) rows.push(current)
+      current = [id]
+      cols = span
+    } else {
+      current.push(id)
+      cols += span
+      if (cols >= MAX) {
+        rows.push(current)
+        current = []
+        cols = 0
+      }
+    }
+  }
+  if (current.length > 0) rows.push(current)
+  return rows
+}
+
+function initialWidths(row: WidgetId[]): number[] {
+  const totalSpan = row.reduce((s, id) => s + WIDGET_META[id].colSpan, 0)
+  return row.map(id => (WIDGET_META[id].colSpan / totalSpan) * 100)
+}
+
+function equalHeights(n: number): number[] {
+  return Array.from({ length: n }, () => 100 / n)
+}
+
+// ─── Shared resize helper ─────────────────────────────────────────────────────
+
+function startAxisResize(opts: {
+  startPx: number
+  startValues: number[]
+  idx: number
+  containerSizePx: () => number
+  min: number
+  cursor: string
+  onUpdate: (values: number[]) => void
+}) {
+  const { startPx, startValues, idx, containerSizePx, min, cursor, onUpdate } = opts
+
+  const onMove = (me: MouseEvent) => {
+    const total = containerSizePx()
+    if (total === 0) return
+    const delta = ((cursor === 'col-resize' ? me.clientX : me.clientY) - startPx) / total * 100
+    const next = [...startValues]
+    next[idx]     = Math.max(min, startValues[idx] + delta)
+    next[idx + 1] = Math.max(min, startValues[idx + 1] - delta)
+    const sum = next.reduce((a, b) => a + b, 0)
+    onUpdate(next.map(v => (v / sum) * 100))
+  }
+
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+
+  document.body.style.cursor = cursor
+  document.body.style.userSelect = 'none'
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
+// ─── Resizable Row (horizontal) ───────────────────────────────────────────────
+
+function ResizableRow({
+  row,
+  widths,
+  onWidthsChange,
+  onHide,
+  dragging,
+  dragOver,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: {
+  row: WidgetId[]
+  widths: number[]
+  onWidthsChange: (widths: number[]) => void
+  onHide: (id: WidgetId) => void
+  dragging: WidgetId | null
+  dragOver: WidgetId | null
+  onDragStart: (id: WidgetId) => void
+  onDragOver: (e: React.DragEvent, id: WidgetId) => void
+  onDrop: (id: WidgetId) => void
+  onDragEnd: () => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <div ref={containerRef} className="flex items-stretch min-h-0 h-full">
+      {row.map((id, i) => {
+        const meta = WIDGET_META[id]
+        const Icon = meta.icon
+        const isDraggingThis = dragging === id
+        const isDragTarget = dragOver === id && dragging !== id
+
+        return (
+          <React.Fragment key={id}>
+            {/* Widget panel */}
+            <div style={{ flex: `${widths[i]} 1 0%`, minWidth: 0 }}>
+              <div
+                onDragOver={e => onDragOver(e, id)}
+                onDrop={() => onDrop(id)}
+                className={cn(
+                  'rounded-xl border bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden h-full transition-all duration-200',
+                  isDraggingThis && 'opacity-40 scale-[0.98] shadow-none',
+                  isDragTarget && 'ring-2 ring-primary/50 border-primary/30 shadow-lg shadow-primary/10',
+                  !isDraggingThis && !isDragTarget && 'border-border/50 hover:border-border',
+                )}
+              >
+                {/* Header — seule zone draggable */}
+                <div
+                  draggable
+                  onDragStart={() => onDragStart(id)}
+                  onDragEnd={onDragEnd}
+                  className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/20 cursor-grab active:cursor-grabbing select-none"
+                >
+                  <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40" />
+                  <Icon className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-semibold text-foreground">{meta.title}</span>
+                  <button
+                    draggable={false}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => { e.stopPropagation(); onHide(id) }}
+                    title="Masquer ce panneau"
+                    className="ml-auto p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary/60 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* Body — non-draggable, entièrement interactif */}
+                <div className="p-4 overflow-auto flex-1">
+                  {renderWidgetContent(id)}
+                </div>
+              </div>
+            </div>
+
+            {/* Vertical handle — resizes column widths */}
+            {i < row.length - 1 && (
+              <div
+                onMouseDown={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  startAxisResize({
+                    startPx: e.clientX,
+                    startValues: widths,
+                    idx: i,
+                    containerSizePx: () => containerRef.current?.getBoundingClientRect().width ?? 0,
+                    min: 12,
+                    cursor: 'col-resize',
+                    onUpdate: onWidthsChange,
+                  })
+                }}
+                onDoubleClick={() => onWidthsChange(initialWidths(row))}
+                draggable={false}
+                title="Glisser pour redimensionner · Double-clic pour réinitialiser"
+                className="w-3 shrink-0 flex items-stretch justify-center cursor-col-resize group/colhandle hover:bg-primary/8 transition-colors relative z-10 select-none"
+              >
+                <div className="w-px self-stretch bg-border/40 group-hover/colhandle:w-[3px] group-hover/colhandle:bg-primary/50 group-hover/colhandle:rounded-full transition-all duration-150" />
+              </div>
+            )}
+          </React.Fragment>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Resizable Grid (vertical + horizontal) ───────────────────────────────────
+
+function ResizableGrid({
+  rows,
+  rowHeights,
+  onRowHeightsChange,
+  rowWidthsMap,
+  onRowWidthsChange,
+  onHideWidget,
+  dragging,
+  dragOver,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: {
+  rows: WidgetId[][]
+  rowHeights: number[]
+  onRowHeightsChange: (h: number[]) => void
+  rowWidthsMap: Record<string, number[]>
+  onRowWidthsChange: (row: WidgetId[], widths: number[]) => void
+  onHideWidget: (id: WidgetId) => void
+  dragging: WidgetId | null
+  dragOver: WidgetId | null
+  onDragStart: (id: WidgetId) => void
+  onDragOver: (e: React.DragEvent, id: WidgetId) => void
+  onDrop: (id: WidgetId) => void
+  onDragEnd: () => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <div ref={containerRef} className="flex-1 min-h-0 flex flex-col">
+      {rows.map((row, rowIdx) => (
+        <React.Fragment key={row.join(',')}>
+          {/* Row — takes flex-grow share of vertical space */}
+          <div style={{ flex: `${rowHeights[rowIdx] ?? 50} 1 0%`, minHeight: 0 }}>
+            <ResizableRow
+              row={row}
+              widths={rowWidthsMap[row.join(',')] ?? initialWidths(row)}
+              onWidthsChange={w => onRowWidthsChange(row, w)}
+              onHide={onHideWidget}
+              dragging={dragging}
+              dragOver={dragOver}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+            />
+          </div>
+
+          {/* Horizontal handle — resizes row heights */}
+          {rowIdx < rows.length - 1 && (
+            <div
+              onMouseDown={e => {
+                e.preventDefault()
+                startAxisResize({
+                  startPx: e.clientY,
+                  startValues: rowHeights,
+                  idx: rowIdx,
+                  containerSizePx: () => containerRef.current?.getBoundingClientRect().height ?? 0,
+                  min: 8,
+                  cursor: 'row-resize',
+                  onUpdate: onRowHeightsChange,
+                })
+              }}
+              onDoubleClick={() => onRowHeightsChange(equalHeights(rows.length))}
+              draggable={false}
+              title="Glisser pour redimensionner · Double-clic pour égaliser"
+              className="h-3 shrink-0 flex items-center justify-center cursor-row-resize group/rowhandle hover:bg-primary/8 transition-colors select-none"
+            >
+              <div className="h-px w-10 bg-border/40 group-hover/rowhandle:h-[3px] group-hover/rowhandle:w-full group-hover/rowhandle:bg-primary/50 group-hover/rowhandle:rounded-full transition-all duration-150" />
+            </div>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -495,8 +759,48 @@ export default function DashboardPage() {
   const [dragging, setDragging] = useState<WidgetId | null>(null)
   const [dragOver, setDragOver] = useState<WidgetId | null>(null)
   const [time, setTime] = useState('')
+  const [hydrated, setHydrated] = useState(false)
 
-  // Sync theme state to DOM on mount
+  // Column widths: row-key → percentage array
+  const [rowWidthsMap, setRowWidthsMap] = useState<Record<string, number[]>>({})
+
+  // Row heights: one flex-grow value per row
+  const [rowHeights, setRowHeights] = useState<number[]>([50, 50])
+
+  const configs = useModuleSectionsStore(state => state.configs)
+  const toggleSection = useModuleSectionsStore(state => state.toggle)
+
+  useEffect(() => { setHydrated(true) }, [])
+
+  // Visible widget set (from sidebar toggles)
+  const visibleIds = useMemo<Set<WidgetId>>(() => {
+    if (!hydrated) return new Set(DEFAULT_ORDER)
+    return new Set(
+      DEFAULT_ORDER.filter(id => {
+        const cfg = configs['dashboard']?.[id]
+        return cfg === undefined ? true : cfg.visible
+      }),
+    )
+  }, [hydrated, configs])
+
+  // Rows derived from order + visibility
+  const rows = useMemo(
+    () => computeRows(order, visibleIds),
+    [order, visibleIds],
+  )
+
+  // Reset row heights when the number of rows changes
+  useEffect(() => {
+    setRowHeights(prev =>
+      prev.length === rows.length ? prev : equalHeights(rows.length),
+    )
+  }, [rows.length])
+
+  const setRowWidths = useCallback((row: WidgetId[], widths: number[]) => {
+    setRowWidthsMap(prev => ({ ...prev, [row.join(',')]: widths }))
+  }, [])
+
+  // Theme
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'))
   }, [])
@@ -552,76 +856,47 @@ export default function DashboardPage() {
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
 
-      <ModuleLayout pageKey="dashboard" sections={SECTIONS}>
-        <div className="p-4 lg:p-6 space-y-4">
+      {/* overflow-hidden so the grid can own its vertical space */}
+      <ModuleLayout pageKey="dashboard" sections={SECTIONS} mainClassName="overflow-hidden">
+        <div className="h-full flex flex-col p-2 gap-2">
 
-        {/* Summary strip */}
-        <ModuleSection pageKey="dashboard" id="summary" resizable={false}>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              { label: 'Vol. Total',       value: '198 764',  sub: 'titres échangés',    color: 'text-foreground'  },
-              { label: 'Hausses',          value: '28',       sub: 'valeurs en hausse',  color: 'text-emerald-500' },
-              { label: 'Baisses',          value: '15',       sub: 'valeurs en baisse',  color: 'text-red-400'     },
-              { label: 'Capitalisation',   value: '7 962',    sub: 'Mrd XOF total',      color: 'text-primary'     },
-            ].map(s => (
-              <div key={s.label} className="p-3 rounded-xl bg-card/60 border border-border/50 hover:border-border transition-colors">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label} ({s.sub})</div>
-                <div className={cn('text-2xl font-black font-mono mt-1', s.color)}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-        </ModuleSection>
-
-        {/* Widget grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 auto-rows-min">
-          {order.map(id => {
-            const meta = WIDGET_META[id]
-            const Icon = meta.icon
-            const isDraggingThis = dragging === id
-            const isDragTarget = dragOver === id && dragging !== id
-
-            return (
-              <ModuleSection
-                key={id}
-                pageKey="dashboard"
-                id={id}
-                resizable={false}
-                className={cn(meta.colSpan === 2 && 'md:col-span-2')}
-              >
-                <div
-                  draggable
-                  onDragStart={() => handleDragStart(id)}
-                  onDragOver={e => handleDragOver(e, id)}
-                  onDrop={() => handleDrop(id)}
-                  onDragEnd={handleDragEnd}
-                  className={cn(
-                    'rounded-xl border bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden h-full transition-all duration-200',
-                    isDraggingThis && 'opacity-40 scale-[0.98] shadow-none',
-                    isDragTarget && 'ring-2 ring-primary/50 border-primary/30 shadow-lg shadow-primary/10',
-                    !isDraggingThis && !isDragTarget && 'border-border/50 hover:border-border',
-                  )}
-                >
-                  {/* Widget header */}
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/20 cursor-grab active:cursor-grabbing select-none">
-                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40" />
-                    <Icon className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-semibold text-foreground">{meta.title}</span>
-                  </div>
-
-                  {/* Widget body */}
-                  <div className="p-4 overflow-auto">
-                    {renderWidgetContent(id)}
-                  </div>
+          {/* Summary strip — shrinks to its content height */}
+          <ModuleSection pageKey="dashboard" id="summary" resizable={false} className="shrink-0">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { label: 'Vol. Total',       value: '198 764',  sub: 'titres échangés',    color: 'text-foreground'  },
+                { label: 'Hausses',          value: '28',       sub: 'valeurs en hausse',  color: 'text-emerald-500' },
+                { label: 'Baisses',          value: '15',       sub: 'valeurs en baisse',  color: 'text-red-400'     },
+                { label: 'Capitalisation',   value: '7 962',    sub: 'Mrd XOF total',      color: 'text-primary'     },
+              ].map(s => (
+                <div key={s.label} className="p-3 rounded-xl bg-card/60 border border-border/50 hover:border-border transition-colors">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label} ({s.sub})</div>
+                  <div className={cn('text-2xl font-black font-mono mt-1', s.color)}>{s.value}</div>
                 </div>
-              </ModuleSection>
-            )
-          })}
-        </div>
+              ))}
+            </div>
+          </ModuleSection>
+
+          {/* Resizable grid — fills remaining height */}
+          <ResizableGrid
+            rows={rows}
+            rowHeights={rowHeights}
+            onRowHeightsChange={setRowHeights}
+            rowWidthsMap={rowWidthsMap}
+            onRowWidthsChange={setRowWidths}
+            onHideWidget={id => toggleSection('dashboard', id)}
+            dragging={dragging}
+            dragOver={dragOver}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
+          />
 
         </div>
       </ModuleLayout>
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <footer className="border-t border-border/30 py-2.5 px-6 flex items-center justify-between text-[10px] text-muted-foreground bg-card/30 backdrop-blur-sm shrink-0">
         <span>Bloomfield Terminal · Dashboard v1.0</span>
         <div className="flex items-center gap-2">

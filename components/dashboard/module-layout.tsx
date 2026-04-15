@@ -86,7 +86,7 @@ export function ModuleSection({
     <div
       data-module-section
       className={cn('flex flex-col', className)}
-      style={cfg.height > 0 ? { height: cfg.height } : undefined}
+      style={(resizable && cfg.height > 0) ? { height: cfg.height } : undefined}
     >
       <div className={cn('flex-1', cfg.height > 0 && 'overflow-auto min-h-0')}>
         {children}
