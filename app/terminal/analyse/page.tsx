@@ -14,7 +14,8 @@ import {
   companyProfiles, financialRatios, countryRiskCards,
 } from '@/lib/mock-data'
 import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
-import { ResizablePanesGrid } from '@/components/dashboard/resizable-panes'
+import { PanelGrid, PanelRow, downloadCSV, ChartZoom, ZOOM_MAIN, ZOOM_INDICATOR } from '@/components/dashboard/panel-grid'
+import { useModuleSectionsStore } from '@/lib/module-sections-store'
 
 const SECTIONS: SectionDef[] = [
   { id: 'technical',     label: 'Analyse Technique',    icon: Activity },
@@ -121,20 +122,6 @@ function TickerBar() {
   )
 }
 
-function SectionCard({ icon: Icon, title, children, colSpan }: {
-  icon: React.ElementType; title: string; children: React.ReactNode; colSpan?: string
-}) {
-  return (
-    <div className={cn('rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden', colSpan)}>
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/20">
-        <Icon className="w-4 h-4 text-primary" />
-        <span className="text-sm font-semibold">{title}</span>
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  )
-}
-
 const tooltipStyle = {
   contentStyle: { backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '11px' },
 }
@@ -154,6 +141,8 @@ export default function AnalysePage() {
   const [riskCountry, setRiskCountry] = useState('CI')
   const [ratioSector, setRatioSector] = useState('Tous')
   const [time, setTime] = useState('')
+
+  const toggleSection = useModuleSectionsStore(s => s.toggle)
 
   useEffect(() => {
     setTime(new Date().toLocaleTimeString('fr-FR'))
@@ -188,24 +177,33 @@ export default function AnalysePage() {
   const sectors = ['Tous', ...Array.from(new Set(financialRatios.map(r => r.sector)))]
   const filteredRatios = ratioSector === 'Tous' ? financialRatios : financialRatios.filter(r => r.sector === ratioSector)
 
-  return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
-      <ModuleLayout pageKey="analyse" sections={SECTIONS} mainClassName="overflow-hidden">
-        <div className="h-full flex flex-col p-4">
-        <ResizablePanesGrid
-          pageKey="analyse"
-          rows={[
-            { id: 'analyse-row-1', cells: [
-              { id: 'technical', initialFlex: 2, content: (
-                <SectionCard icon={Activity} title="Analyse Technique">
-                  <div className="flex items-center gap-2 mb-3">
-                    <select value={techSymbol} onChange={e => setTechSymbol(e.target.value)}
-                      className="rounded-md border border-border bg-secondary/30 px-2 py-1 text-xs text-foreground focus:outline-none">
-                      {brvmStocks.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol}</option>)}
-                    </select>
-                    <span className="text-xs text-muted-foreground">90 jours · Bollinger ± 2σ · RSI(14) · MACD(12,26,9)</span>
-                  </div>
-                  <div className="h-44">
+  const panelRows: PanelRow[] = [
+    {
+      id: 'analyse-row-1',
+      cells: [
+        {
+          id: 'technical',
+          title: 'Analyse Technique',
+          icon: Activity,
+          initialFlex: 2,
+          csvExport: () => {
+            const headers = ['Date', 'Clôture', 'BB Sup.', 'BB Moy.', 'BB Inf.', 'RSI', 'MACD', 'Signal', 'Histogramme']
+            const rows = chartData.map(d => [d.date, d.close, d.upper ?? '', d.mid ?? '', d.lower ?? '', d.rsi ?? '', d.macd ?? '', d.signal ?? '', d.histogram ?? ''])
+            downloadCSV(headers, rows, `bloomfield-technical-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          imageExportId: 'technical',
+          content: (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <select value={techSymbol} onChange={e => setTechSymbol(e.target.value)}
+                  className="rounded-md border border-border bg-secondary/30 px-2 py-1 text-xs text-foreground focus:outline-none">
+                  {brvmStocks.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol}</option>)}
+                </select>
+                <span className="text-xs text-muted-foreground">90 jours · Bollinger ± 2σ · RSI(14) · MACD(12,26,9)</span>
+              </div>
+              <ChartZoom heights={ZOOM_MAIN} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                         <defs>
@@ -229,7 +227,11 @@ export default function AnalysePage() {
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="h-20 mt-1">
+                )}
+              </ChartZoom>
+              <ChartZoom heights={ZOOM_INDICATOR} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
                     <div className="text-[10px] text-muted-foreground mb-0.5">RSI (14)</div>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={chartData} margin={{ top: 0, right: 4, left: -20, bottom: 0 }}>
@@ -243,7 +245,11 @@ export default function AnalysePage() {
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="h-20 mt-1">
+                )}
+              </ChartZoom>
+              <ChartZoom heights={ZOOM_INDICATOR} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
                     <div className="text-[10px] text-muted-foreground mb-0.5">MACD (12,26,9)</div>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={chartData} margin={{ top: 0, right: 4, left: -20, bottom: 0 }}>
@@ -258,28 +264,44 @@ export default function AnalysePage() {
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                </SectionCard>
-              )},
-              { id: 'fundamentals', initialFlex: 1, content: (
-                <SectionCard icon={BarChart2} title="Analyse Fondamentale">
-                  <select value={fundSymbol} onChange={e => setFundSymbol(e.target.value)}
-                    className="w-full rounded-md border border-border bg-secondary/30 px-2 py-1 text-xs text-foreground focus:outline-none mb-3">
-                    {companyProfiles.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol} — {c.name}</option>)}
-                  </select>
-                  <div className="grid grid-cols-2 gap-1.5 mb-3">
-                    {[
-                      { label: 'Rev. (Md)', value: fundCompany.revenue.toFixed(1) },
-                      { label: 'EBITDA%', value: `${fundCompany.ebitdaMargin.toFixed(1)}%` },
-                      { label: 'Marge nette', value: `${fundCompany.netMargin.toFixed(1)}%` },
-                      { label: 'Yield', value: `${fundCompany.dividendYield.toFixed(2)}%` },
-                    ].map(k => (
-                      <div key={k.label} className="bg-secondary/30 rounded p-2 text-center">
-                        <div className="text-[10px] text-muted-foreground">{k.label}</div>
-                        <div className="text-sm font-bold font-mono text-foreground">{k.value}</div>
-                      </div>
-                    ))}
+                )}
+              </ChartZoom>
+            </div>
+          ),
+        },
+        {
+          id: 'fundamentals',
+          title: 'Analyse Fondamentale',
+          icon: BarChart2,
+          initialFlex: 1,
+          csvExport: () => {
+            const headers = ['Année', 'Revenus', 'EBITDA', 'Résultat net']
+            const rows = fundCompany.revenueHistory.map(r => [r.year, r.revenue, r.ebitda, r.netIncome])
+            downloadCSV(headers, rows, `bloomfield-fundamentals-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          imageExportId: 'fundamentals',
+          content: (
+            <div>
+              <select value={fundSymbol} onChange={e => setFundSymbol(e.target.value)}
+                className="w-full rounded-md border border-border bg-secondary/30 px-2 py-1 text-xs text-foreground focus:outline-none mb-3">
+                {companyProfiles.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol} — {c.name}</option>)}
+              </select>
+              <div className="grid grid-cols-2 gap-1.5 mb-3">
+                {[
+                  { label: 'Rev. (Md)', value: fundCompany.revenue.toFixed(1) },
+                  { label: 'EBITDA%', value: `${fundCompany.ebitdaMargin.toFixed(1)}%` },
+                  { label: 'Marge nette', value: `${fundCompany.netMargin.toFixed(1)}%` },
+                  { label: 'Yield', value: `${fundCompany.dividendYield.toFixed(2)}%` },
+                ].map(k => (
+                  <div key={k.label} className="bg-secondary/30 rounded p-2 text-center">
+                    <div className="text-[10px] text-muted-foreground">{k.label}</div>
+                    <div className="text-sm font-bold font-mono text-foreground">{k.value}</div>
                   </div>
-                  <div className="h-52">
+                ))}
+              </div>
+              <ChartZoom heights={ZOOM_MAIN} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={fundCompany.revenueHistory} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -293,88 +315,118 @@ export default function AnalysePage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </SectionCard>
-              )},
-            ]},
-            { id: 'analyse-row-2', cells: [
-              { id: 'ratios', initialFlex: 2, content: (
-                <SectionCard icon={BarChart2} title="Ratios financiers comparatifs">
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {sectors.map(s => (
-                      <button key={s} onClick={() => setRatioSector(s)}
-                        className={cn('px-2 py-0.5 rounded-full border text-[10px] font-medium transition-colors',
-                          ratioSector === s ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground border-border hover:border-foreground/30'
-                        )}>{s}</button>
+                )}
+              </ChartZoom>
+            </div>
+          ),
+        },
+      ],
+    },
+    {
+      id: 'analyse-row-2',
+      cells: [
+        {
+          id: 'ratios',
+          title: 'Ratios financiers comparatifs',
+          icon: BarChart2,
+          initialFlex: 2,
+          csvExport: () => {
+            const headers = ['Symbole', 'Secteur', 'P/E', 'P/B', 'ROE%', 'EV/EBITDA', 'Yield%', 'Marge%', 'Det/FP']
+            const rows = filteredRatios.map(r => [r.symbol, r.sector, r.per.toFixed(1), r.pbr.toFixed(2), r.roe.toFixed(1), r.evEbitda.toFixed(1), r.dividendYield.toFixed(2), r.netMargin.toFixed(1), r.debtEquity.toFixed(2)])
+            downloadCSV(headers, rows, `bloomfield-ratios-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          content: (
+            <div>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {sectors.map(s => (
+                  <button key={s} onClick={() => setRatioSector(s)}
+                    className={cn('px-2 py-0.5 rounded-full border text-[10px] font-medium transition-colors',
+                      ratioSector === s ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground border-border hover:border-foreground/30'
+                    )}>{s}</button>
+                ))}
+              </div>
+              <div className="overflow-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="text-[10px] text-muted-foreground font-semibold border-b border-border/40">
+                      <th className="text-left py-1.5 px-2">Symbole</th>
+                      <th className="text-right py-1.5 px-2">P/E</th>
+                      <th className="text-right py-1.5 px-2">P/B</th>
+                      <th className="text-right py-1.5 px-2">ROE%</th>
+                      <th className="text-right py-1.5 px-2">EV/EBITDA</th>
+                      <th className="text-right py-1.5 px-2">Yield%</th>
+                      <th className="text-right py-1.5 px-2">Marge%</th>
+                      <th className="text-right py-1.5 px-2">Det/FP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRatios.map(r => (
+                      <tr key={r.symbol} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
+                        <td className="py-1.5 px-2">
+                          <div className="font-bold text-foreground">{r.symbol}</div>
+                          <div className="text-[10px] text-muted-foreground">{r.sector}</div>
+                        </td>
+                        <td className="text-right py-1.5 px-2 font-mono">{r.per.toFixed(1)}</td>
+                        <td className="text-right py-1.5 px-2 font-mono">{r.pbr.toFixed(2)}</td>
+                        <td className={cn('text-right py-1.5 px-2 font-mono', r.roe >= 15 ? 'text-emerald-500' : r.roe >= 8 ? 'text-foreground' : 'text-red-400')}>{r.roe.toFixed(1)}</td>
+                        <td className="text-right py-1.5 px-2 font-mono">{r.evEbitda.toFixed(1)}</td>
+                        <td className={cn('text-right py-1.5 px-2 font-mono', r.dividendYield >= 3 ? 'text-emerald-500' : 'text-foreground')}>{r.dividendYield.toFixed(2)}</td>
+                        <td className="text-right py-1.5 px-2 font-mono">{r.netMargin.toFixed(1)}</td>
+                        <td className="text-right py-1.5 px-2 font-mono">{r.debtEquity.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ),
+        },
+        {
+          id: 'risk-scorecard',
+          title: 'Scorecard Risques Souverains',
+          icon: ShieldAlert,
+          initialFlex: 1,
+          csvExport: () => {
+            const headers = ['Dimension', 'Score']
+            const rows = riskCard.dimensions.map(d => [d.label, d.score])
+            downloadCSV(headers, rows, `bloomfield-risk-scorecard-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          imageExportId: 'risk-scorecard',
+          content: (
+            <div>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {countryRiskCards.map(c => (
+                  <button key={c.countryCode} onClick={() => setRiskCountry(c.countryCode)}
+                    className={cn('px-2 py-0.5 rounded-full border text-[10px] font-medium transition-colors',
+                      riskCountry === c.countryCode ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground border-border hover:border-foreground/30'
+                    )}>{c.countryCode}</button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn('w-14 h-14 rounded-full border-4 flex flex-col items-center justify-center shrink-0',
+                  riskCard.overallScore <= 30 ? 'border-emerald-500 text-emerald-500' :
+                  riskCard.overallScore <= 50 ? 'border-yellow-500 text-yellow-500' :
+                  riskCard.overallScore <= 70 ? 'border-orange-500 text-orange-500' : 'border-red-400 text-red-400'
+                )}>
+                  <span className="font-bold text-base leading-none">{riskCard.overallScore}</span>
+                </div>
+                <div>
+                  <div className="font-bold text-sm">{riskCard.country}</div>
+                  <div className="flex gap-1 mt-1">
+                    {[riskCard.ratingMoodys, riskCard.ratingSP, riskCard.ratingFitch].map((r, i) => (
+                      <span key={i} className="bg-secondary/50 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold">{r}</span>
                     ))}
                   </div>
-                  <div className="overflow-auto">
-                    <table className="w-full text-xs border-collapse">
-                      <thead>
-                        <tr className="text-[10px] text-muted-foreground font-semibold border-b border-border/40">
-                          <th className="text-left py-1.5 px-2">Symbole</th>
-                          <th className="text-right py-1.5 px-2">P/E</th>
-                          <th className="text-right py-1.5 px-2">P/B</th>
-                          <th className="text-right py-1.5 px-2">ROE%</th>
-                          <th className="text-right py-1.5 px-2">EV/EBITDA</th>
-                          <th className="text-right py-1.5 px-2">Yield%</th>
-                          <th className="text-right py-1.5 px-2">Marge%</th>
-                          <th className="text-right py-1.5 px-2">Det/FP</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredRatios.map(r => (
-                          <tr key={r.symbol} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
-                            <td className="py-1.5 px-2">
-                              <div className="font-bold text-foreground">{r.symbol}</div>
-                              <div className="text-[10px] text-muted-foreground">{r.sector}</div>
-                            </td>
-                            <td className="text-right py-1.5 px-2 font-mono">{r.per.toFixed(1)}</td>
-                            <td className="text-right py-1.5 px-2 font-mono">{r.pbr.toFixed(2)}</td>
-                            <td className={cn('text-right py-1.5 px-2 font-mono', r.roe >= 15 ? 'text-emerald-500' : r.roe >= 8 ? 'text-foreground' : 'text-red-400')}>{r.roe.toFixed(1)}</td>
-                            <td className="text-right py-1.5 px-2 font-mono">{r.evEbitda.toFixed(1)}</td>
-                            <td className={cn('text-right py-1.5 px-2 font-mono', r.dividendYield >= 3 ? 'text-emerald-500' : 'text-foreground')}>{r.dividendYield.toFixed(2)}</td>
-                            <td className="text-right py-1.5 px-2 font-mono">{r.netMargin.toFixed(1)}</td>
-                            <td className="text-right py-1.5 px-2 font-mono">{r.debtEquity.toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Delta: <span className={cn('font-semibold', riskCard.overallScore <= riskCard.previousScore ? 'text-emerald-500' : 'text-red-400')}>
+                      {riskCard.overallScore <= riskCard.previousScore ? '▼' : '▲'}{Math.abs(riskCard.overallScore - riskCard.previousScore)}
+                    </span> vs mois préc.
                   </div>
-                </SectionCard>
-              )},
-              { id: 'risk-scorecard', initialFlex: 1, content: (
-                <SectionCard icon={ShieldAlert} title="Scorecard Risques Souverains">
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {countryRiskCards.map(c => (
-                      <button key={c.countryCode} onClick={() => setRiskCountry(c.countryCode)}
-                        className={cn('px-2 py-0.5 rounded-full border text-[10px] font-medium transition-colors',
-                          riskCountry === c.countryCode ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground border-border hover:border-foreground/30'
-                        )}>{c.countryCode}</button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={cn('w-14 h-14 rounded-full border-4 flex flex-col items-center justify-center shrink-0',
-                      riskCard.overallScore <= 30 ? 'border-emerald-500 text-emerald-500' :
-                      riskCard.overallScore <= 50 ? 'border-yellow-500 text-yellow-500' :
-                      riskCard.overallScore <= 70 ? 'border-orange-500 text-orange-500' : 'border-red-400 text-red-400'
-                    )}>
-                      <span className="font-bold text-base leading-none">{riskCard.overallScore}</span>
-                    </div>
-                    <div>
-                      <div className="font-bold text-sm">{riskCard.country}</div>
-                      <div className="flex gap-1 mt-1">
-                        {[riskCard.ratingMoodys, riskCard.ratingSP, riskCard.ratingFitch].map((r, i) => (
-                          <span key={i} className="bg-secondary/50 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold">{r}</span>
-                        ))}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        Delta: <span className={cn('font-semibold', riskCard.overallScore <= riskCard.previousScore ? 'text-emerald-500' : 'text-red-400')}>
-                          {riskCard.overallScore <= riskCard.previousScore ? '▼' : '▲'}{Math.abs(riskCard.overallScore - riskCard.previousScore)}
-                        </span> vs mois préc.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-44">
+                </div>
+              </div>
+              <ChartZoom heights={ZOOM_MAIN} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={radarData}>
                         <PolarGrid stroke="var(--border)" />
@@ -384,69 +436,93 @@ export default function AnalysePage() {
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
-                </SectionCard>
-              )},
-            ]},
-            { id: 'analyse-row-3', cells: [
-              { id: 'ratings', content: (
-                <SectionCard icon={Globe} title="Notations souveraines UEMOA">
-                  <div className="overflow-auto">
-                    <table className="w-full text-xs border-collapse">
-                      <thead>
-                        <tr className="text-[10px] text-muted-foreground font-semibold border-b border-border/40">
-                          <th className="text-left py-1.5 px-3">Pays</th>
-                          <th className="text-center py-1.5 px-3">Moody's</th>
-                          <th className="text-center py-1.5 px-3">S&P</th>
-                          <th className="text-center py-1.5 px-3">Fitch</th>
-                          <th className="text-center py-1.5 px-3">Outlook</th>
-                          <th className="text-center py-1.5 px-3">Score risque</th>
-                          <th className="text-left py-1.5 px-3">Niveau</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {countryRiskCards.map(c => (
-                          <tr key={c.countryCode} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
-                            <td className="py-2 px-3">
-                              <div className="font-bold text-foreground">{c.country}</div>
-                              <div className="text-[10px] text-muted-foreground">{c.countryCode}</div>
-                            </td>
-                            <td className="text-center py-2 px-3 font-mono font-semibold">{c.ratingMoodys}</td>
-                            <td className="text-center py-2 px-3 font-mono font-semibold">{c.ratingSP}</td>
-                            <td className="text-center py-2 px-3 font-mono font-semibold">{c.ratingFitch}</td>
-                            <td className="text-center py-2 px-3 text-muted-foreground">{c.outlook}</td>
-                            <td className="text-center py-2 px-3">
-                              <div className="inline-flex items-center gap-1.5">
-                                <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
-                                  <div className={cn('h-full rounded-full', {
-                                    'bg-emerald-500': c.overallScore <= 30,
-                                    'bg-yellow-500': c.overallScore > 30 && c.overallScore <= 50,
-                                    'bg-orange-500': c.overallScore > 50 && c.overallScore <= 70,
-                                    'bg-red-400': c.overallScore > 70,
-                                  })} style={{ width: `${c.overallScore}%` }} />
-                                </div>
-                                <span className={cn('font-mono font-bold', riskColor(c.overallScore))}>{c.overallScore}</span>
-                              </div>
-                            </td>
-                            <td className="py-2 px-3">
-                              <span className={cn('text-[10px] font-semibold rounded px-1.5 py-0.5', {
-                                'bg-emerald-500/20 text-emerald-500': c.overallScore <= 30,
-                                'bg-yellow-500/20 text-yellow-500': c.overallScore > 30 && c.overallScore <= 50,
-                                'bg-orange-500/20 text-orange-500': c.overallScore > 50 && c.overallScore <= 70,
-                                'bg-red-400/20 text-red-400': c.overallScore > 70,
-                              })}>
-                                {c.overallScore <= 30 ? 'Faible' : c.overallScore <= 50 ? 'Modéré' : c.overallScore <= 70 ? 'Élevé' : 'Critique'}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </SectionCard>
-              )},
-            ]},
-          ]}
-        />
+                )}
+              </ChartZoom>
+            </div>
+          ),
+        },
+      ],
+    },
+    {
+      id: 'analyse-row-3',
+      cells: [
+        {
+          id: 'ratings',
+          title: 'Notations souveraines UEMOA',
+          icon: Globe,
+          csvExport: () => {
+            const headers = ["Pays", "Code", "Moody's", "S&P", "Fitch", "Outlook", "Score"]
+            const rows = countryRiskCards.map(c => [c.country, c.countryCode, c.ratingMoodys, c.ratingSP, c.ratingFitch, c.outlook, c.overallScore])
+            downloadCSV(headers, rows, `bloomfield-ratings-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          content: (
+            <div className="overflow-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="text-[10px] text-muted-foreground font-semibold border-b border-border/40">
+                    <th className="text-left py-1.5 px-3">Pays</th>
+                    <th className="text-center py-1.5 px-3">Moody's</th>
+                    <th className="text-center py-1.5 px-3">S&P</th>
+                    <th className="text-center py-1.5 px-3">Fitch</th>
+                    <th className="text-center py-1.5 px-3">Outlook</th>
+                    <th className="text-center py-1.5 px-3">Score risque</th>
+                    <th className="text-left py-1.5 px-3">Niveau</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {countryRiskCards.map(c => (
+                    <tr key={c.countryCode} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
+                      <td className="py-2 px-3">
+                        <div className="font-bold text-foreground">{c.country}</div>
+                        <div className="text-[10px] text-muted-foreground">{c.countryCode}</div>
+                      </td>
+                      <td className="text-center py-2 px-3 font-mono font-semibold">{c.ratingMoodys}</td>
+                      <td className="text-center py-2 px-3 font-mono font-semibold">{c.ratingSP}</td>
+                      <td className="text-center py-2 px-3 font-mono font-semibold">{c.ratingFitch}</td>
+                      <td className="text-center py-2 px-3 text-muted-foreground">{c.outlook}</td>
+                      <td className="text-center py-2 px-3">
+                        <div className="inline-flex items-center gap-1.5">
+                          <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
+                            <div className={cn('h-full rounded-full', {
+                              'bg-emerald-500': c.overallScore <= 30,
+                              'bg-yellow-500': c.overallScore > 30 && c.overallScore <= 50,
+                              'bg-orange-500': c.overallScore > 50 && c.overallScore <= 70,
+                              'bg-red-400': c.overallScore > 70,
+                            })} style={{ width: `${c.overallScore}%` }} />
+                          </div>
+                          <span className={cn('font-mono font-bold', riskColor(c.overallScore))}>{c.overallScore}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={cn('text-[10px] font-semibold rounded px-1.5 py-0.5', {
+                          'bg-emerald-500/20 text-emerald-500': c.overallScore <= 30,
+                          'bg-yellow-500/20 text-yellow-500': c.overallScore > 30 && c.overallScore <= 50,
+                          'bg-orange-500/20 text-orange-500': c.overallScore > 50 && c.overallScore <= 70,
+                          'bg-red-400/20 text-red-400': c.overallScore > 70,
+                        })}>
+                          {c.overallScore <= 30 ? 'Faible' : c.overallScore <= 50 ? 'Modéré' : c.overallScore <= 70 ? 'Élevé' : 'Critique'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ),
+        },
+      ],
+    },
+  ]
+
+  return (
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      <ModuleLayout pageKey="analyse" sections={SECTIONS} mainClassName="overflow-hidden" title="Analyse Financière">
+        <div className="h-full flex flex-col p-4">
+          <PanelGrid
+            rows={panelRows}
+            pageKey="analyse"
+            onHide={id => toggleSection('analyse', id)}
+          />
         </div>
       </ModuleLayout>
 

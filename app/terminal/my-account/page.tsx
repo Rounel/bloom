@@ -9,7 +9,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
-import { ResizablePanesGrid } from '@/components/dashboard/resizable-panes'
+import { PanelGrid, PanelRow } from '@/components/dashboard/panel-grid'
+import { useModuleSectionsStore } from '@/lib/module-sections-store'
 
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
@@ -55,31 +56,9 @@ const ACTIVITE = [
   { id: 6, action: 'Connexion réussie', device: 'Firefox · macOS', date: '06/04/2026 08:15', type: 'success' as const },
 ]
 
-// ─── Card wrapper ─────────────────────────────────────────────────────────────
-
-function SectionCard({
-  icon: Icon, title, badge, children,
-}: {
-  icon: React.ElementType
-  title: string
-  badge?: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden h-full flex flex-col">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/20 shrink-0">
-        <Icon className="w-4 h-4 text-primary" />
-        <span className="text-sm font-semibold">{title}</span>
-        {badge && <div className="ml-auto">{badge}</div>}
-      </div>
-      <div className="p-4 flex-1 overflow-auto">{children}</div>
-    </div>
-  )
-}
-
 // ─── Profil form ──────────────────────────────────────────────────────────────
 
-function ProfilSection() {
+function ProfilContent() {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     nom: USER.nom,
@@ -97,11 +76,10 @@ function ProfilSection() {
   }
 
   return (
-    <SectionCard
-      icon={User}
-      title="Profil utilisateur"
-      badge={
-        editing ? (
+    <div>
+      {/* Edit button inline */}
+      <div className="flex justify-end mb-3">
+        {editing ? (
           <div className="flex gap-1">
             <button onClick={handleSave}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -117,9 +95,9 @@ function ProfilSection() {
             className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
             <Edit2 className="w-3 h-3" /> Modifier
           </button>
-        )
-      }
-    >
+        )}
+      </div>
+
       {saved && (
         <div className="mb-4 flex items-center gap-2 text-xs text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
           <Check className="w-3.5 h-3.5" /> Profil mis à jour avec succès
@@ -210,13 +188,13 @@ function ProfilSection() {
           </div>
         </div>
       </div>
-    </SectionCard>
+    </div>
   )
 }
 
 // ─── Sécurité ─────────────────────────────────────────────────────────────────
 
-function SecuriteSection() {
+function SecuriteContent() {
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew]         = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -251,121 +229,119 @@ function SecuriteSection() {
   const strengthBg = ['bg-secondary', 'bg-red-400', 'bg-yellow-500', 'bg-emerald-500', 'bg-emerald-400'][strength]
 
   return (
-    <SectionCard icon={ShieldCheck} title="Sécurité du compte">
-      <div className="space-y-5">
+    <div className="space-y-5">
 
-        {/* Mot de passe */}
-        <div>
-          <div className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
-            <KeyRound className="w-3.5 h-3.5 text-primary" /> Changer le mot de passe
+      {/* Mot de passe */}
+      <div>
+        <div className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+          <KeyRound className="w-3.5 h-3.5 text-primary" /> Changer le mot de passe
+        </div>
+
+        {pwdMsg === 'error' && (
+          <div className="mb-3 text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 flex items-center gap-2">
+            <X className="w-3.5 h-3.5" /> Les mots de passe ne correspondent pas.
           </div>
+        )}
+        {pwdMsg === 'success' && (
+          <div className="mb-3 text-xs text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+            <Check className="w-3.5 h-3.5" /> Mot de passe modifié avec succès.
+          </div>
+        )}
 
-          {pwdMsg === 'error' && (
-            <div className="mb-3 text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 flex items-center gap-2">
-              <X className="w-3.5 h-3.5" /> Les mots de passe ne correspondent pas.
-            </div>
-          )}
-          {pwdMsg === 'success' && (
-            <div className="mb-3 text-xs text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
-              <Check className="w-3.5 h-3.5" /> Mot de passe modifié avec succès.
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {[
-              { label: 'Mot de passe actuel', key: 'current', show: showCurrent, toggle: () => setShowCurrent(v => !v) },
-              { label: 'Nouveau mot de passe', key: 'next', show: showNew, toggle: () => setShowNew(v => !v) },
-              { label: 'Confirmer', key: 'confirm', show: showConfirm, toggle: () => setShowConfirm(v => !v) },
-            ].map(f => (
-              <div key={f.key}>
-                <label className="text-[10px] text-muted-foreground block mb-1">{f.label}</label>
-                <div className="flex items-center gap-1 rounded-lg border border-border bg-secondary/30 px-3 focus-within:border-primary/50 transition-colors">
-                  <input
-                    type={f.show ? 'text' : 'password'}
-                    value={pwdForm[f.key as keyof typeof pwdForm]}
-                    onChange={e => setPwdForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    placeholder="••••••••"
-                    className="flex-1 bg-transparent py-2 text-xs text-foreground focus:outline-none placeholder:text-muted-foreground/40"
-                  />
-                  <button onClick={f.toggle} className="text-muted-foreground/60 hover:text-muted-foreground">
-                    {f.show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                {f.key === 'next' && pwdForm.next.length > 0 && (
-                  <div className="mt-1.5">
-                    <div className="flex gap-0.5 mb-1">
-                      {[1, 2, 3, 4].map(i => (
-                        <div key={i} className={cn('h-1 flex-1 rounded-full transition-colors', i <= strength ? strengthBg : 'bg-secondary')} />
-                      ))}
-                    </div>
-                    <span className={cn('text-[10px] font-medium', strengthColor)}>{strengthLabel}</span>
+        <div className="space-y-2">
+          {[
+            { label: 'Mot de passe actuel', key: 'current', show: showCurrent, toggle: () => setShowCurrent(v => !v) },
+            { label: 'Nouveau mot de passe', key: 'next', show: showNew, toggle: () => setShowNew(v => !v) },
+            { label: 'Confirmer', key: 'confirm', show: showConfirm, toggle: () => setShowConfirm(v => !v) },
+          ].map(f => (
+            <div key={f.key}>
+              <label className="text-[10px] text-muted-foreground block mb-1">{f.label}</label>
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-secondary/30 px-3 focus-within:border-primary/50 transition-colors">
+                <input
+                  type={f.show ? 'text' : 'password'}
+                  value={pwdForm[f.key as keyof typeof pwdForm]}
+                  onChange={e => setPwdForm(p => ({ ...p, [f.key]: e.target.value }))}
+                  placeholder="••••••••"
+                  className="flex-1 bg-transparent py-2 text-xs text-foreground focus:outline-none placeholder:text-muted-foreground/40"
+                />
+                <button onClick={f.toggle} className="text-muted-foreground/60 hover:text-muted-foreground">
+                  {f.show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              {f.key === 'next' && pwdForm.next.length > 0 && (
+                <div className="mt-1.5">
+                  <div className="flex gap-0.5 mb-1">
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className={cn('h-1 flex-1 rounded-full transition-colors', i <= strength ? strengthBg : 'bg-secondary')} />
+                    ))}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={handlePwd}
-            className="mt-3 w-full py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            Mettre à jour le mot de passe
-          </button>
-        </div>
-
-        <div className="border-t border-border/40" />
-
-        {/* 2FA */}
-        <div>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-foreground flex items-center gap-2">
-                <Smartphone className="w-3.5 h-3.5 text-primary" /> Authentification 2 facteurs
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                Via application TOTP (Google Authenticator)
-              </div>
-            </div>
-            <button
-              onClick={() => setTwoFa(v => !v)}
-              className={cn(
-                'relative w-10 h-5 rounded-full transition-colors shrink-0',
-                twoFa ? 'bg-primary' : 'bg-secondary',
+                  <span className={cn('text-[10px] font-medium', strengthColor)}>{strengthLabel}</span>
+                </div>
               )}
-            >
-              <span className={cn(
-                'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all',
-                twoFa ? 'left-5' : 'left-0.5',
-              )} />
-            </button>
-          </div>
-          {twoFa && (
-            <div className="mt-2 text-[11px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
-              <ShieldCheck className="w-3 h-3" /> 2FA activé — votre compte est protégé
             </div>
-          )}
+          ))}
         </div>
 
-        <div className="border-t border-border/40" />
+        <button
+          onClick={handlePwd}
+          className="mt-3 w-full py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Mettre à jour le mot de passe
+        </button>
+      </div>
 
-        {/* Zone danger */}
-        <div>
-          <div className="text-xs font-semibold text-foreground flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" /> Zone critique
+      <div className="border-t border-border/40" />
+
+      {/* 2FA */}
+      <div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+              <Smartphone className="w-3.5 h-3.5 text-primary" /> Authentification 2 facteurs
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              Via application TOTP (Google Authenticator)
+            </div>
           </div>
-          <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-red-400/20 bg-red-400/5 hover:bg-red-400/10 transition-colors text-xs text-red-400 font-medium">
-            Supprimer mon compte
-            <ChevronRight className="w-3.5 h-3.5" />
+          <button
+            onClick={() => setTwoFa(v => !v)}
+            className={cn(
+              'relative w-10 h-5 rounded-full transition-colors shrink-0',
+              twoFa ? 'bg-primary' : 'bg-secondary',
+            )}
+          >
+            <span className={cn(
+              'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all',
+              twoFa ? 'left-5' : 'left-0.5',
+            )} />
           </button>
         </div>
+        {twoFa && (
+          <div className="mt-2 text-[11px] text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+            <ShieldCheck className="w-3 h-3" /> 2FA activé — votre compte est protégé
+          </div>
+        )}
       </div>
-    </SectionCard>
+
+      <div className="border-t border-border/40" />
+
+      {/* Zone danger */}
+      <div>
+        <div className="text-xs font-semibold text-foreground flex items-center gap-2 mb-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-red-400" /> Zone critique
+        </div>
+        <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-red-400/20 bg-red-400/5 hover:bg-red-400/10 transition-colors text-xs text-red-400 font-medium">
+          Supprimer mon compte
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
   )
 }
 
 // ─── Préférences ──────────────────────────────────────────────────────────────
 
-function PreferencesSection() {
+function PreferencesContent() {
   const [theme, setTheme]       = useState<'dark' | 'light'>('dark')
   const [lang, setLang]         = useState('fr')
   const [notifs, setNotifs]     = useState({
@@ -382,199 +358,195 @@ function PreferencesSection() {
   }
 
   return (
-    <SectionCard icon={Settings} title="Préférences">
-      <div className="space-y-5">
+    <div className="space-y-5">
 
-        {saved && (
-          <div className="text-xs text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
-            <Check className="w-3.5 h-3.5" /> Préférences sauvegardées
-          </div>
-        )}
-
-        {/* Thème */}
-        <div>
-          <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Thème</div>
-          <div className="flex gap-2">
-            {([
-              { val: 'dark', label: 'Sombre', icon: Moon },
-              { val: 'light', label: 'Clair', icon: Sun },
-            ] as const).map(t => (
-              <button
-                key={t.val}
-                onClick={() => setTheme(t.val)}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-medium transition-colors',
-                  theme === t.val
-                    ? 'bg-primary/15 border-primary/40 text-primary'
-                    : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border',
-                )}
-              >
-                <t.icon className="w-3.5 h-3.5" />
-                {t.label}
-              </button>
-            ))}
-          </div>
+      {saved && (
+        <div className="text-xs text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex items-center gap-2">
+          <Check className="w-3.5 h-3.5" /> Préférences sauvegardées
         </div>
+      )}
 
-        {/* Langue */}
-        <div>
-          <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Langue</div>
-          <div className="flex gap-2">
-            {[
-              { val: 'fr', label: 'Français' },
-              { val: 'en', label: 'English' },
-            ].map(l => (
-              <button
-                key={l.val}
-                onClick={() => setLang(l.val)}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-medium transition-colors',
-                  lang === l.val
-                    ? 'bg-primary/15 border-primary/40 text-primary'
-                    : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border',
-                )}
-              >
-                <Globe className="w-3.5 h-3.5" />
-                {l.label}
-              </button>
-            ))}
-          </div>
+      {/* Thème */}
+      <div>
+        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Thème</div>
+        <div className="flex gap-2">
+          {([
+            { val: 'dark', label: 'Sombre', icon: Moon },
+            { val: 'light', label: 'Clair', icon: Sun },
+          ] as const).map(t => (
+            <button
+              key={t.val}
+              onClick={() => setTheme(t.val)}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-medium transition-colors',
+                theme === t.val
+                  ? 'bg-primary/15 border-primary/40 text-primary'
+                  : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border',
+              )}
+            >
+              <t.icon className="w-3.5 h-3.5" />
+              {t.label}
+            </button>
+          ))}
         </div>
-
-        {/* Notifications */}
-        <div>
-          <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Notifications</div>
-          <div className="space-y-2">
-            {([
-              { key: 'alertes',  label: 'Alertes de prix' },
-              { key: 'news',     label: 'Actualités du marché' },
-              { key: 'rapport',  label: 'Rapports hebdomadaires' },
-              { key: 'securite', label: 'Alertes de sécurité' },
-            ] as const).map(n => (
-              <div key={n.key} className="flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/20">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-foreground">{n.label}</span>
-                </div>
-                <button
-                  onClick={() => setNotifs(prev => ({ ...prev, [n.key]: !prev[n.key] }))}
-                  className={cn(
-                    'relative w-8 h-4 rounded-full transition-colors shrink-0',
-                    notifs[n.key] ? 'bg-primary' : 'bg-secondary',
-                  )}
-                >
-                  <span className={cn(
-                    'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all',
-                    notifs[n.key] ? 'left-4' : 'left-0.5',
-                  )} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={handleSave}
-          className="w-full py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          Sauvegarder les préférences
-        </button>
       </div>
-    </SectionCard>
+
+      {/* Langue */}
+      <div>
+        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Langue</div>
+        <div className="flex gap-2">
+          {[
+            { val: 'fr', label: 'Français' },
+            { val: 'en', label: 'English' },
+          ].map(l => (
+            <button
+              key={l.val}
+              onClick={() => setLang(l.val)}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-medium transition-colors',
+                lang === l.val
+                  ? 'bg-primary/15 border-primary/40 text-primary'
+                  : 'border-border/50 text-muted-foreground hover:text-foreground hover:border-border',
+              )}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div>
+        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Notifications</div>
+        <div className="space-y-2">
+          {([
+            { key: 'alertes',  label: 'Alertes de prix' },
+            { key: 'news',     label: 'Actualités du marché' },
+            { key: 'rapport',  label: 'Rapports hebdomadaires' },
+            { key: 'securite', label: 'Alertes de sécurité' },
+          ] as const).map(n => (
+            <div key={n.key} className="flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/20">
+              <div className="flex items-center gap-2">
+                <Bell className="w-3 h-3 text-muted-foreground" />
+                <span className="text-xs text-foreground">{n.label}</span>
+              </div>
+              <button
+                onClick={() => setNotifs(prev => ({ ...prev, [n.key]: !prev[n.key] }))}
+                className={cn(
+                  'relative w-8 h-4 rounded-full transition-colors shrink-0',
+                  notifs[n.key] ? 'bg-primary' : 'bg-secondary',
+                )}
+              >
+                <span className={cn(
+                  'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all',
+                  notifs[n.key] ? 'left-4' : 'left-0.5',
+                )} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={handleSave}
+        className="w-full py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+      >
+        Sauvegarder les préférences
+      </button>
+    </div>
   )
 }
 
 // ─── Abonnement ───────────────────────────────────────────────────────────────
 
-function AbonnementSection() {
+function AbonnementContent() {
   return (
-    <SectionCard icon={CreditCard} title="Abonnement & facturation">
-      <div className="space-y-4">
+    <div className="space-y-4">
 
-        {/* Plan actif */}
-        <div className="rounded-xl border border-primary/30 bg-primary/8 p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Badge className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold text-foreground">{USER.plan}</span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">Renouvellement le 16 mai 2026</div>
+      {/* Plan actif */}
+      <div className="rounded-xl border border-primary/30 bg-primary/8 p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Badge className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-foreground">{USER.plan}</span>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold border border-emerald-500/20">
-              Actif
-            </span>
+            <div className="text-xs text-muted-foreground mt-1">Renouvellement le 16 mai 2026</div>
           </div>
-          <div className="mt-3 text-2xl font-black font-mono text-foreground">
-            35 000 <span className="text-sm text-muted-foreground font-normal">FCFA/mois</span>
-          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold border border-emerald-500/20">
+            Actif
+          </span>
         </div>
-
-        {/* Usage */}
-        <div className="space-y-2">
-          <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Utilisation ce mois</div>
-          {[
-            { label: 'Requêtes API', used: 8200, max: 10000, unit: 'req.' },
-            { label: 'Alertes actives', used: 12, max: 50, unit: '' },
-            { label: 'Exports PDF', used: 3, max: 20, unit: '' },
-          ].map(u => {
-            const pct = (u.used / u.max) * 100
-            return (
-              <div key={u.label}>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-foreground">{u.label}</span>
-                  <span className="font-mono text-muted-foreground">
-                    {u.used.toLocaleString('fr-FR')} / {u.max.toLocaleString('fr-FR')} {u.unit}
-                  </span>
-                </div>
-                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-all',
-                      pct > 80 ? 'bg-red-400' : pct > 60 ? 'bg-yellow-500' : 'bg-primary',
-                    )}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Fonctionnalités */}
-        <div className="space-y-1.5">
-          <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Inclus dans votre plan</div>
-          {[
-            'Accès complet BRVM (données temps réel)',
-            'Indicateurs macroéconomiques UEMOA',
-            'Gestion de portefeuille avancée',
-            'Alertes de prix illimitées',
-            'Exports CSV / PDF',
-            'Support prioritaire',
-          ].map(f => (
-            <div key={f} className="flex items-center gap-2 text-xs text-foreground">
-              <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-              {f}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-2">
-          <button className="flex-1 py-2 rounded-lg text-xs font-semibold border border-border text-foreground hover:bg-secondary/50 transition-colors">
-            Changer de plan
-          </button>
-          <button className="flex-1 py-2 rounded-lg text-xs font-semibold border border-red-400/30 text-red-400 hover:bg-red-400/10 transition-colors">
-            Résilier
-          </button>
+        <div className="mt-3 text-2xl font-black font-mono text-foreground">
+          35 000 <span className="text-sm text-muted-foreground font-normal">FCFA/mois</span>
         </div>
       </div>
-    </SectionCard>
+
+      {/* Usage */}
+      <div className="space-y-2">
+        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Utilisation ce mois</div>
+        {[
+          { label: 'Requêtes API', used: 8200, max: 10000, unit: 'req.' },
+          { label: 'Alertes actives', used: 12, max: 50, unit: '' },
+          { label: 'Exports PDF', used: 3, max: 20, unit: '' },
+        ].map(u => {
+          const pct = (u.used / u.max) * 100
+          return (
+            <div key={u.label}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-foreground">{u.label}</span>
+                <span className="font-mono text-muted-foreground">
+                  {u.used.toLocaleString('fr-FR')} / {u.max.toLocaleString('fr-FR')} {u.unit}
+                </span>
+              </div>
+              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all',
+                    pct > 80 ? 'bg-red-400' : pct > 60 ? 'bg-yellow-500' : 'bg-primary',
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Fonctionnalités */}
+      <div className="space-y-1.5">
+        <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Inclus dans votre plan</div>
+        {[
+          'Accès complet BRVM (données temps réel)',
+          'Indicateurs macroéconomiques UEMOA',
+          'Gestion de portefeuille avancée',
+          'Alertes de prix illimitées',
+          'Exports CSV / PDF',
+          'Support prioritaire',
+        ].map(f => (
+          <div key={f} className="flex items-center gap-2 text-xs text-foreground">
+            <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+            {f}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        <button className="flex-1 py-2 rounded-lg text-xs font-semibold border border-border text-foreground hover:bg-secondary/50 transition-colors">
+          Changer de plan
+        </button>
+        <button className="flex-1 py-2 rounded-lg text-xs font-semibold border border-red-400/30 text-red-400 hover:bg-red-400/10 transition-colors">
+          Résilier
+        </button>
+      </div>
+    </div>
   )
 }
 
 // ─── Sessions actives ─────────────────────────────────────────────────────────
 
-function SessionsSection() {
+function SessionsContent() {
   const [sessions, setSessions] = useState(SESSIONS)
 
   function revoke(id: number) {
@@ -582,62 +554,60 @@ function SessionsSection() {
   }
 
   return (
-    <SectionCard icon={Monitor} title="Sessions actives">
-      <div className="space-y-3">
-        {sessions.map(s => (
-          <div
-            key={s.id}
-            className={cn(
-              'flex items-start gap-3 p-3 rounded-xl border transition-colors',
-              s.current
-                ? 'bg-primary/8 border-primary/25'
-                : 'bg-secondary/20 border-border/40 hover:border-border/70',
-            )}
-          >
-            <div className={cn(
-              'mt-0.5 w-2 h-2 rounded-full shrink-0',
-              s.current ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40',
-            )} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold text-foreground">{s.device}</span>
-                {s.current && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-semibold">
-                    Session actuelle
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                {s.location} · {s.ip} · {s.date}
-              </div>
+    <div className="space-y-3">
+      {sessions.map(s => (
+        <div
+          key={s.id}
+          className={cn(
+            'flex items-start gap-3 p-3 rounded-xl border transition-colors',
+            s.current
+              ? 'bg-primary/8 border-primary/25'
+              : 'bg-secondary/20 border-border/40 hover:border-border/70',
+          )}
+        >
+          <div className={cn(
+            'mt-0.5 w-2 h-2 rounded-full shrink-0',
+            s.current ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40',
+          )} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-foreground">{s.device}</span>
+              {s.current && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-semibold">
+                  Session actuelle
+                </span>
+              )}
             </div>
-            {!s.current && (
-              <button
-                onClick={() => revoke(s.id)}
-                className="shrink-0 flex items-center gap-1 text-[11px] text-red-400/70 hover:text-red-400 transition-colors"
-                title="Révoquer cette session"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {s.location} · {s.ip} · {s.date}
+            </div>
           </div>
-        ))}
-        {sessions.length > 1 && (
-          <button
-            onClick={() => setSessions(prev => prev.filter(s => s.current))}
-            className="w-full py-2 rounded-lg text-xs font-semibold border border-red-400/20 text-red-400 hover:bg-red-400/8 transition-colors"
-          >
-            Déconnecter toutes les autres sessions
-          </button>
-        )}
-      </div>
-    </SectionCard>
+          {!s.current && (
+            <button
+              onClick={() => revoke(s.id)}
+              className="shrink-0 flex items-center gap-1 text-[11px] text-red-400/70 hover:text-red-400 transition-colors"
+              title="Révoquer cette session"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      ))}
+      {sessions.length > 1 && (
+        <button
+          onClick={() => setSessions(prev => prev.filter(s => s.current))}
+          className="w-full py-2 rounded-lg text-xs font-semibold border border-red-400/20 text-red-400 hover:bg-red-400/8 transition-colors"
+        >
+          Déconnecter toutes les autres sessions
+        </button>
+      )}
+    </div>
   )
 }
 
 // ─── Historique d'activité ────────────────────────────────────────────────────
 
-function ActiviteSection() {
+function ActiviteContent() {
   const typeConfig = {
     success: { dot: 'bg-emerald-500', text: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
     info:    { dot: 'bg-primary',     text: 'text-primary',     bg: 'bg-primary/10 border-primary/20' },
@@ -645,33 +615,57 @@ function ActiviteSection() {
   }
 
   return (
-    <SectionCard icon={Clock} title="Historique d'activité">
-      <div className="space-y-2">
-        {ACTIVITE.map(ev => {
-          const cfg = typeConfig[ev.type]
-          return (
-            <div key={ev.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors">
-              <div className={cn('mt-1.5 w-1.5 h-1.5 rounded-full shrink-0', cfg.dot)} />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-foreground">{ev.action}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{ev.device}</div>
-              </div>
-              <div className="text-[10px] text-muted-foreground font-mono shrink-0">{ev.date}</div>
+    <div className="space-y-2">
+      {ACTIVITE.map(ev => {
+        const cfg = typeConfig[ev.type]
+        return (
+          <div key={ev.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors">
+            <div className={cn('mt-1.5 w-1.5 h-1.5 rounded-full shrink-0', cfg.dot)} />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-foreground">{ev.action}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">{ev.device}</div>
             </div>
-          )
-        })}
-      </div>
-    </SectionCard>
+            <div className="text-[10px] text-muted-foreground font-mono shrink-0">{ev.date}</div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function MyAccountPage() {
+  const toggleSection = useModuleSectionsStore(s => s.toggle)
+
+  const panelRows: PanelRow[] = [
+    {
+      id: 'account-row-1',
+      cells: [
+        { id: 'profil',     title: 'Profil utilisateur',       icon: User,       initialFlex: 3, content: <ProfilContent /> },
+        { id: 'abonnement', title: 'Abonnement & facturation', icon: CreditCard, initialFlex: 2, content: <AbonnementContent /> },
+      ],
+    },
+    {
+      id: 'account-row-2',
+      cells: [
+        { id: 'securite',    title: 'Sécurité du compte',  icon: ShieldCheck, initialFlex: 2, content: <SecuriteContent /> },
+        { id: 'preferences', title: 'Préférences',          icon: Settings,    initialFlex: 2, content: <PreferencesContent /> },
+        { id: 'sessions',    title: 'Sessions actives',     icon: Monitor,     initialFlex: 1, content: <SessionsContent /> },
+      ],
+    },
+    {
+      id: 'account-row-3',
+      cells: [
+        { id: 'activite', title: 'Historique d\'activité', icon: Clock, content: <ActiviteContent /> },
+      ],
+    },
+  ]
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
 
-      <ModuleLayout pageKey="my-account" sections={SECTIONS} mainClassName="overflow-hidden">
+      <ModuleLayout pageKey="my-account" sections={SECTIONS} mainClassName="overflow-hidden" title="Mon Compte">
         <div className="h-full flex flex-col p-4 gap-4">
 
           {/* KPI strip */}
@@ -695,31 +689,10 @@ export default function MyAccountPage() {
           </div>
 
           {/* Grille principale */}
-          <ResizablePanesGrid
+          <PanelGrid
+            rows={panelRows}
             pageKey="my-account"
-            rows={[
-              {
-                id: 'account-row-1',
-                cells: [
-                  { id: 'profil',     initialFlex: 3, content: <ProfilSection /> },
-                  { id: 'abonnement', initialFlex: 2, content: <AbonnementSection /> },
-                ],
-              },
-              {
-                id: 'account-row-2',
-                cells: [
-                  { id: 'securite',    initialFlex: 2, content: <SecuriteSection /> },
-                  { id: 'preferences', initialFlex: 2, content: <PreferencesSection /> },
-                  { id: 'sessions',    initialFlex: 1, content: <SessionsSection /> },
-                ],
-              },
-              {
-                id: 'account-row-3',
-                cells: [
-                  { id: 'activite', content: <ActiviteSection /> },
-                ],
-              },
-            ]}
+            onHide={id => toggleSection('my-account', id)}
           />
 
         </div>

@@ -7,8 +7,6 @@ import {
   TrendingUp, TrendingDown, Search, Sun, Moon, X, Clock,
   BarChart2, Activity, Globe, GripVertical,
   DollarSign, Newspaper, ChevronLeft, Wifi,
-  Maximize2, Minimize2, ZoomIn, ZoomOut,
-  FileDown, ImageDown,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -20,6 +18,7 @@ import {
 import { TickerBar } from '@/components/dashboard/ticker-bar'
 import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
 import { useModuleSectionsStore } from '@/lib/module-sections-store'
+import { PanelGrid, PanelCell, PanelRow, downloadCSV, downloadChartAsPNG, ChartZoom, ZOOM_MAIN } from '@/components/dashboard/panel-grid'
 
 const SECTIONS: SectionDef[] = [
   { id: 'summary',        label: 'Résumé du marché',   icon: Activity },
@@ -299,11 +298,7 @@ function TopMoversWidget() {
 
 // ─── Widget: Sector Volumes ───────────────────────────────────────────────────
 
-const SECTOR_ZOOM_HEIGHTS = [120, 160, 208, 270, 340]
-
 function SectorVolumesWidget() {
-  const [zoom, setZoom] = useState(2)
-
   const data = sectorPerformance.map(s => ({
     name: s.sector.length > 14 ? s.sector.slice(0, 14) + '…' : s.sector,
     fullName: s.sector,
@@ -313,91 +308,50 @@ function SectorVolumesWidget() {
   }))
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* Zoom controls */}
-      <div className="flex items-center justify-end gap-1">
-        <button
-          onClick={() => setZoom(z => Math.max(0, z - 1))}
-          disabled={zoom === 0}
-          title="Zoom arrière"
-          className={cn(
-            'p-1 rounded transition-colors',
-            zoom === 0
-              ? 'text-muted-foreground/20 cursor-not-allowed'
-              : 'text-muted-foreground/50 hover:text-foreground hover:bg-secondary/60',
-          )}
-        >
-          <ZoomOut className="w-3 h-3" />
-        </button>
-        <div className="flex gap-0.5 items-center px-1">
-          {SECTOR_ZOOM_HEIGHTS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setZoom(i)}
-              className={cn(
-                'rounded-full transition-all',
-                i === zoom ? 'w-2 h-2 bg-primary' : 'w-1.5 h-1.5 bg-border/60 hover:bg-muted-foreground/40',
-              )}
-            />
-          ))}
+    <ChartZoom heights={ZOOM_MAIN} defaultLevel={2}>
+      {(h) => (
+        <div style={{ height: h }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 4, right: 8, bottom: 24, left: 0 }}>
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                angle={-15}
+                textAnchor="end"
+                interval={0}
+              />
+              <YAxis
+                tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                width={44}
+                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 11,
+                }}
+                formatter={(v: number, _: string, { payload }: { payload: typeof data[0] }) => [
+                  v.toLocaleString('fr-FR') + ' titres',
+                  payload.fullName,
+                ]}
+                labelFormatter={() => ''}
+              />
+              <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
+                {data.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.perf >= 0 ? 'oklch(0.65 0.18 145)' : 'oklch(0.55 0.22 25)'}
+                    fillOpacity={0.85}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-        <button
-          onClick={() => setZoom(z => Math.min(SECTOR_ZOOM_HEIGHTS.length - 1, z + 1))}
-          disabled={zoom === SECTOR_ZOOM_HEIGHTS.length - 1}
-          title="Zoom avant"
-          className={cn(
-            'p-1 rounded transition-colors',
-            zoom === SECTOR_ZOOM_HEIGHTS.length - 1
-              ? 'text-muted-foreground/20 cursor-not-allowed'
-              : 'text-muted-foreground/50 hover:text-foreground hover:bg-secondary/60',
-          )}
-        >
-          <ZoomIn className="w-3 h-3" />
-        </button>
-      </div>
-
-      {/* Chart */}
-      <div style={{ height: SECTOR_ZOOM_HEIGHTS[zoom], transition: 'height 0.2s ease' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 8, bottom: 24, left: 0 }}>
-            <XAxis
-              dataKey="name"
-              tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
-              angle={-15}
-              textAnchor="end"
-              interval={0}
-            />
-            <YAxis
-              tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
-              width={44}
-              tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-            />
-            <Tooltip
-              contentStyle={{
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                fontSize: 11,
-              }}
-              formatter={(v: number, _: string, { payload }: { payload: typeof data[0] }) => [
-                v.toLocaleString('fr-FR') + ' titres',
-                payload.fullName,
-              ]}
-              labelFormatter={() => ''}
-            />
-            <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
-              {data.map((entry, i) => (
-                <Cell
-                  key={i}
-                  fill={entry.perf >= 0 ? 'oklch(0.65 0.18 145)' : 'oklch(0.55 0.22 25)'}
-                  fillOpacity={0.85}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+      )}
+    </ChartZoom>
   )
 }
 
@@ -513,55 +467,6 @@ function NewsWidget() {
   )
 }
 
-// ─── Export utilities ─────────────────────────────────────────────────────────
-
-function downloadCSV(headers: string[], rows: (string | number)[][], filename: string) {
-  const esc = (v: string | number) => {
-    const s = String(v)
-    return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? `"${s.replace(/"/g, '""')}"`
-      : s
-  }
-  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function downloadChartAsPNG(widgetId: string, filename: string) {
-  const container = document.querySelector(`[data-chart-id="${widgetId}"]`)
-  const svg = container?.querySelector('svg')
-  if (!svg) return
-  const { width, height } = svg.getBoundingClientRect()
-  const scale = 2
-  const canvas = document.createElement('canvas')
-  canvas.width = width * scale
-  canvas.height = height * scale
-  const ctx = canvas.getContext('2d')!
-  ctx.scale(scale, scale)
-  ctx.fillStyle = '#111118'
-  ctx.fillRect(0, 0, width, height)
-  const svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(svgBlob)
-  const img = new Image()
-  img.onload = () => {
-    ctx.drawImage(img, 0, 0)
-    URL.revokeObjectURL(url)
-    canvas.toBlob(blob => {
-      if (!blob) return
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = filename
-      a.click()
-    }, 'image/png')
-  }
-  img.src = url
-}
-
 function getWidgetCSV(id: WidgetId): { headers: string[]; rows: (string | number)[][] } {
   switch (id) {
     case 'indices':
@@ -665,347 +570,6 @@ function computeRows(order: WidgetId[], visibleIds: Set<WidgetId>): WidgetId[][]
   return rows
 }
 
-function initialWidths(row: WidgetId[]): number[] {
-  const totalSpan = row.reduce((s, id) => s + WIDGET_META[id].colSpan, 0)
-  return row.map(id => (WIDGET_META[id].colSpan / totalSpan) * 100)
-}
-
-function equalHeights(n: number): number[] {
-  return Array.from({ length: n }, () => 100 / n)
-}
-
-// ─── Shared resize helper ─────────────────────────────────────────────────────
-
-function startAxisResize(opts: {
-  startPx: number
-  startValues: number[]
-  idx: number
-  containerSizePx: () => number
-  min: number
-  cursor: string
-  onUpdate: (values: number[]) => void
-}) {
-  const { startPx, startValues, idx, containerSizePx, min, cursor, onUpdate } = opts
-
-  const onMove = (me: MouseEvent) => {
-    const total = containerSizePx()
-    if (total === 0) return
-    const delta = ((cursor === 'col-resize' ? me.clientX : me.clientY) - startPx) / total * 100
-    const next = [...startValues]
-    next[idx]     = Math.max(min, startValues[idx] + delta)
-    next[idx + 1] = Math.max(min, startValues[idx + 1] - delta)
-    const sum = next.reduce((a, b) => a + b, 0)
-    onUpdate(next.map(v => (v / sum) * 100))
-  }
-
-  const onUp = () => {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-  }
-
-  document.body.style.cursor = cursor
-  document.body.style.userSelect = 'none'
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
-}
-
-// ─── Resizable Row (horizontal) ───────────────────────────────────────────────
-
-function ResizableRow({
-  row,
-  widths,
-  onWidthsChange,
-  onHide,
-  onMaximize,
-  dragging,
-  dragOver,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
-}: {
-  row: WidgetId[]
-  widths: number[]
-  onWidthsChange: (widths: number[]) => void
-  onHide: (id: WidgetId) => void
-  onMaximize: (id: WidgetId) => void
-  dragging: WidgetId | null
-  dragOver: WidgetId | null
-  onDragStart: (id: WidgetId) => void
-  onDragOver: (e: React.DragEvent, id: WidgetId) => void
-  onDrop: (id: WidgetId) => void
-  onDragEnd: () => void
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  return (
-    <div ref={containerRef} className="flex items-stretch min-h-0 h-full">
-      {row.map((id, i) => {
-        const meta = WIDGET_META[id]
-        const Icon = meta.icon
-        const isDraggingThis = dragging === id
-        const isDragTarget = dragOver === id && dragging !== id
-
-        return (
-          <React.Fragment key={id}>
-            {/* Widget panel */}
-            <div style={{ flex: `${widths[i]} 1 0%`, minWidth: 0 }}>
-              <div
-                data-chart-id={id}
-                onDragOver={e => onDragOver(e, id)}
-                onDrop={() => onDrop(id)}
-                className={cn(
-                  'rounded-xl border bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden h-full transition-all duration-200',
-                  isDraggingThis && 'opacity-40 scale-[0.98] shadow-none',
-                  isDragTarget && 'ring-2 ring-primary/50 border-primary/30 shadow-lg shadow-primary/10',
-                  !isDraggingThis && !isDragTarget && 'border-border/50 hover:border-border',
-                )}
-              >
-                {/* Header — seule zone draggable */}
-                <div
-                  draggable
-                  onDragStart={() => onDragStart(id)}
-                  onDragEnd={onDragEnd}
-                  className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/20 cursor-grab active:cursor-grabbing select-none"
-                >
-                  <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40" />
-                  <Icon className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-semibold text-foreground">{meta.title}</span>
-
-                  {/* Action buttons */}
-                  <div className="ml-auto flex items-center gap-0.5">
-                    <button
-                      draggable={false}
-                      onMouseDown={e => e.stopPropagation()}
-                      onClick={e => {
-                        e.stopPropagation()
-                        const { headers, rows } = getWidgetCSV(id)
-                        downloadCSV(headers, rows, `bloomfield-${id}-${new Date().toISOString().slice(0, 10)}.csv`)
-                      }}
-                      title="Exporter CSV"
-                      className="p-0.5 rounded text-muted-foreground/30 hover:text-emerald-500 hover:bg-secondary/60 transition-colors cursor-pointer"
-                    >
-                      <FileDown className="w-3 h-3" />
-                    </button>
-                    {meta.canExportImage && (
-                      <button
-                        draggable={false}
-                        onMouseDown={e => e.stopPropagation()}
-                        onClick={e => {
-                          e.stopPropagation()
-                          downloadChartAsPNG(id, `bloomfield-${id}-${new Date().toISOString().slice(0, 10)}.png`)
-                        }}
-                        title="Exporter image PNG"
-                        className="p-0.5 rounded text-muted-foreground/30 hover:text-blue-400 hover:bg-secondary/60 transition-colors cursor-pointer"
-                      >
-                        <ImageDown className="w-3 h-3" />
-                      </button>
-                    )}
-                    <button
-                      draggable={false}
-                      onMouseDown={e => e.stopPropagation()}
-                      onClick={e => { e.stopPropagation(); onMaximize(id) }}
-                      title="Agrandir ce panneau"
-                      className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary/60 transition-colors cursor-pointer"
-                    >
-                      <Maximize2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      draggable={false}
-                      onMouseDown={e => e.stopPropagation()}
-                      onClick={e => { e.stopPropagation(); onHide(id) }}
-                      title="Masquer ce panneau"
-                      className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary/60 transition-colors cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Body — non-draggable, entièrement interactif */}
-                <div className="p-4 overflow-auto flex-1">
-                  {renderWidgetContent(id)}
-                </div>
-              </div>
-            </div>
-
-            {/* Vertical handle — resizes column widths */}
-            {i < row.length - 1 && (
-              <div
-                onMouseDown={e => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  startAxisResize({
-                    startPx: e.clientX,
-                    startValues: widths,
-                    idx: i,
-                    containerSizePx: () => containerRef.current?.getBoundingClientRect().width ?? 0,
-                    min: 12,
-                    cursor: 'col-resize',
-                    onUpdate: onWidthsChange,
-                  })
-                }}
-                onDoubleClick={() => onWidthsChange(initialWidths(row))}
-                draggable={false}
-                title="Glisser pour redimensionner · Double-clic pour réinitialiser"
-                className="w-3 shrink-0 flex items-stretch justify-center cursor-col-resize group/colhandle hover:bg-primary/8 transition-colors relative z-10 select-none"
-              >
-                <div className="w-px self-stretch bg-border/40 group-hover/colhandle:w-[3px] group-hover/colhandle:bg-primary/50 group-hover/colhandle:rounded-full transition-all duration-150" />
-              </div>
-            )}
-          </React.Fragment>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Resizable Grid (vertical + horizontal) ───────────────────────────────────
-
-function ResizableGrid({
-  rows,
-  rowHeights,
-  onRowHeightsChange,
-  rowWidthsMap,
-  onRowWidthsChange,
-  onHideWidget,
-  onMaximizeWidget,
-  dragging,
-  dragOver,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
-}: {
-  rows: WidgetId[][]
-  rowHeights: number[]
-  onRowHeightsChange: (h: number[]) => void
-  rowWidthsMap: Record<string, number[]>
-  onRowWidthsChange: (row: WidgetId[], widths: number[]) => void
-  onHideWidget: (id: WidgetId) => void
-  onMaximizeWidget: (id: WidgetId) => void
-  dragging: WidgetId | null
-  dragOver: WidgetId | null
-  onDragStart: (id: WidgetId) => void
-  onDragOver: (e: React.DragEvent, id: WidgetId) => void
-  onDrop: (id: WidgetId) => void
-  onDragEnd: () => void
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  return (
-    <div ref={containerRef} className="flex-1 min-h-0 flex flex-col">
-      {rows.map((row, rowIdx) => (
-        <React.Fragment key={row.join(',')}>
-          {/* Row — takes flex-grow share of vertical space */}
-          <div style={{ flex: `${rowHeights[rowIdx] ?? 50} 1 0%`, minHeight: 0 }}>
-            <ResizableRow
-              row={row}
-              widths={rowWidthsMap[row.join(',')] ?? initialWidths(row)}
-              onWidthsChange={w => onRowWidthsChange(row, w)}
-              onHide={onHideWidget}
-              onMaximize={onMaximizeWidget}
-              dragging={dragging}
-              dragOver={dragOver}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-            />
-          </div>
-
-          {/* Horizontal handle — resizes row heights */}
-          {rowIdx < rows.length - 1 && (
-            <div
-              onMouseDown={e => {
-                e.preventDefault()
-                startAxisResize({
-                  startPx: e.clientY,
-                  startValues: rowHeights,
-                  idx: rowIdx,
-                  containerSizePx: () => containerRef.current?.getBoundingClientRect().height ?? 0,
-                  min: 8,
-                  cursor: 'row-resize',
-                  onUpdate: onRowHeightsChange,
-                })
-              }}
-              onDoubleClick={() => onRowHeightsChange(equalHeights(rows.length))}
-              draggable={false}
-              title="Glisser pour redimensionner · Double-clic pour égaliser"
-              className="h-3 shrink-0 flex items-center justify-center cursor-row-resize group/rowhandle hover:bg-primary/8 transition-colors select-none"
-            >
-              <div className="h-px w-10 bg-border/40 group-hover/rowhandle:h-[3px] group-hover/rowhandle:w-full group-hover/rowhandle:bg-primary/50 group-hover/rowhandle:rounded-full transition-all duration-150" />
-            </div>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  )
-}
-
-// ─── Maximized Widget ─────────────────────────────────────────────────────────
-
-function MaximizedWidget({
-  id,
-  onMinimize,
-  onHide,
-}: {
-  id: WidgetId
-  onMinimize: () => void
-  onHide: (id: WidgetId) => void
-}) {
-  const meta = WIDGET_META[id]
-  const Icon = meta.icon
-  return (
-    <div data-chart-id={id} className="flex-1 min-h-0 flex flex-col rounded-xl border border-primary/30 bg-card/80 backdrop-blur-sm overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-secondary/20 shrink-0">
-        <Icon className="w-4 h-4 text-primary" />
-        <span className="text-xs font-semibold text-foreground">{meta.title}</span>
-        <div className="ml-auto flex items-center gap-0.5">
-          <button
-            onClick={() => {
-              const { headers, rows } = getWidgetCSV(id)
-              downloadCSV(headers, rows, `bloomfield-${id}-${new Date().toISOString().slice(0, 10)}.csv`)
-            }}
-            title="Exporter CSV"
-            className="p-0.5 rounded text-muted-foreground/30 hover:text-emerald-500 hover:bg-secondary/60 transition-colors cursor-pointer"
-          >
-            <FileDown className="w-3 h-3" />
-          </button>
-          {meta.canExportImage && (
-            <button
-              onClick={() => downloadChartAsPNG(id, `bloomfield-${id}-${new Date().toISOString().slice(0, 10)}.png`)}
-              title="Exporter image PNG"
-              className="p-0.5 rounded text-muted-foreground/30 hover:text-blue-400 hover:bg-secondary/60 transition-colors cursor-pointer"
-            >
-              <ImageDown className="w-3 h-3" />
-            </button>
-          )}
-          <button
-            onClick={onMinimize}
-            title="Restaurer la grille"
-            className="p-0.5 rounded text-primary/60 hover:text-primary hover:bg-secondary/60 transition-colors cursor-pointer"
-          >
-            <Minimize2 className="w-3 h-3" />
-          </button>
-          <button
-            onClick={() => { onHide(id); onMinimize() }}
-            title="Masquer ce panneau"
-            className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary/60 transition-colors cursor-pointer"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-      <div className="p-4 overflow-auto flex-1">
-        {renderWidgetContent(id)}
-      </div>
-    </div>
-  )
-}
-
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -1013,15 +577,8 @@ export default function DashboardPage() {
   const [order, setOrder] = useState<WidgetId[]>(DEFAULT_ORDER)
   const [dragging, setDragging] = useState<WidgetId | null>(null)
   const [dragOver, setDragOver] = useState<WidgetId | null>(null)
-  const [maximized, setMaximized] = useState<WidgetId | null>(null)
   const [time, setTime] = useState('')
   const [hydrated, setHydrated] = useState(false)
-
-  // Column widths: row-key → percentage array
-  const [rowWidthsMap, setRowWidthsMap] = useState<Record<string, number[]>>({})
-
-  // Row heights: one flex-grow value per row
-  const [rowHeights, setRowHeights] = useState<number[]>([50, 50])
 
   const configs = useModuleSectionsStore(state => state.configs)
   const toggleSection = useModuleSectionsStore(state => state.toggle)
@@ -1044,17 +601,6 @@ export default function DashboardPage() {
     () => computeRows(order, visibleIds),
     [order, visibleIds],
   )
-
-  // Reset row heights when the number of rows changes
-  useEffect(() => {
-    setRowHeights(prev =>
-      prev.length === rows.length ? prev : equalHeights(rows.length),
-    )
-  }, [rows.length])
-
-  const setRowWidths = useCallback((row: WidgetId[], widths: number[]) => {
-    setRowWidthsMap(prev => ({ ...prev, [row.join(',')]: widths }))
-  }, [])
 
   // Theme
   useEffect(() => {
@@ -1082,21 +628,21 @@ export default function DashboardPage() {
   }
 
   // Drag & drop handlers
-  const handleDragStart = (id: WidgetId) => setDragging(id)
+  const handleDragStart = (id: string) => setDragging(id as WidgetId)
 
-  const handleDragOver = (e: React.DragEvent, id: WidgetId) => {
+  const handleDragOver = (e: React.DragEvent, id: string) => {
     e.preventDefault()
-    if (id !== dragging) setDragOver(id)
+    if (id !== dragging) setDragOver(id as WidgetId)
   }
 
-  const handleDrop = (targetId: WidgetId) => {
+  const handleDrop = (targetId: string) => {
     if (dragging && dragging !== targetId) {
       setOrder(prev => {
         const next = [...prev]
-        const from = next.indexOf(dragging)
-        const to = next.indexOf(targetId)
+        const from = next.indexOf(dragging as WidgetId)
+        const to = next.indexOf(targetId as WidgetId)
         next.splice(from, 1)
-        next.splice(to, 0, dragging)
+        next.splice(to, 0, dragging as WidgetId)
         return next
       })
     }
@@ -1109,11 +655,31 @@ export default function DashboardPage() {
     setDragOver(null)
   }
 
+  // Build PanelRows from rows
+  const panelRows: PanelRow[] = rows.map(row => ({
+    id: row.join(','),
+    cells: row.map(id => {
+      const meta = WIDGET_META[id]
+      return {
+        id,
+        title: meta.title,
+        icon: meta.icon,
+        content: renderWidgetContent(id),
+        initialFlex: meta.colSpan,
+        csvExport: () => {
+          const { headers, rows: csvRows } = getWidgetCSV(id)
+          downloadCSV(headers, csvRows, `bloomfield-${id}-${new Date().toISOString().slice(0, 10)}.csv`)
+        },
+        imageExportId: meta.canExportImage ? id : undefined,
+      } satisfies PanelCell
+    }),
+  }))
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
 
       {/* overflow-hidden so the grid can own its vertical space */}
-      <ModuleLayout pageKey="dashboard" sections={SECTIONS} mainClassName="overflow-hidden">
+      <ModuleLayout pageKey="dashboard" sections={SECTIONS} mainClassName="overflow-hidden" title="Dashboard">
         <div className="h-full flex flex-col p-2 gap-2">
 
           {/* Summary strip — shrinks to its content height */}
@@ -1134,29 +700,16 @@ export default function DashboardPage() {
           </ModuleSection>
 
           {/* Resizable grid — fills remaining height */}
-          {maximized ? (
-            <MaximizedWidget
-              id={maximized}
-              onMinimize={() => setMaximized(null)}
-              onHide={id => toggleSection('dashboard', id)}
-            />
-          ) : (
-            <ResizableGrid
-              rows={rows}
-              rowHeights={rowHeights}
-              onRowHeightsChange={setRowHeights}
-              rowWidthsMap={rowWidthsMap}
-              onRowWidthsChange={setRowWidths}
-              onHideWidget={id => toggleSection('dashboard', id)}
-              onMaximizeWidget={id => setMaximized(id)}
-              dragging={dragging}
-              dragOver={dragOver}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-            />
-          )}
+          <PanelGrid
+            rows={panelRows}
+            onHide={id => toggleSection('dashboard', id)}
+            dragging={dragging}
+            dragOver={dragOver}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
+          />
 
         </div>
       </ModuleLayout>

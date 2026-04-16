@@ -18,8 +18,9 @@ import {
   sovereignYields, generateStockHistory,
 } from '@/lib/mock-data'
 import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
-import { ResizablePanesGrid } from '@/components/dashboard/resizable-panes'
+import { PanelGrid, PanelRow } from '@/components/dashboard/panel-grid'
 import { TickerBar } from '@/components/dashboard/ticker-bar'
+import { useModuleSectionsStore } from '@/lib/module-sections-store'
 
 // ─── Section IDs ──────────────────────────────────────────────────────────────
 
@@ -79,16 +80,6 @@ function ChangeChip({ value, size = 'sm' }: { value: number; size?: 'xs' | 'sm' 
       {pos ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       {pct(value)}
     </span>
-  )
-}
-
-function SectionCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
-      <div className="flex-1 overflow-auto">
-        {children}
-      </div>
-    </div>
   )
 }
 
@@ -648,48 +639,67 @@ function renderSection(id: SectionId) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OperationsPage() {
+  const toggleSection = useModuleSectionsStore(s => s.toggle)
+
+  const panelRows: PanelRow[] = [{
+    id: 'ops-row',
+    cells: [
+      {
+        id: 'ops-left',
+        title: 'Marché & Données',
+        icon: BarChart2,
+        content: (
+          <div className="h-full overflow-auto p-4 space-y-4">
+            {SECTIONS.slice(0, 8).map(item => (
+              <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false}>
+                <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
+                    <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
+                  </div>
+                  <div className="flex-1 overflow-auto">
+                    {renderSection(item.id as SectionId)}
+                  </div>
+                </div>
+              </ModuleSection>
+            ))}
+          </div>
+        ),
+      },
+      {
+        id: 'ops-right',
+        title: 'Analyses & Actualités',
+        icon: Newspaper,
+        content: (
+          <div className="h-full overflow-auto p-4 space-y-4">
+            {SECTIONS.slice(8).map(item => (
+              <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false}>
+                <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
+                    <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
+                  </div>
+                  <div className="flex-1 overflow-auto">
+                    {renderSection(item.id as SectionId)}
+                  </div>
+                </div>
+              </ModuleSection>
+            ))}
+          </div>
+        ),
+      },
+    ],
+  }]
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <ModuleLayout pageKey="operations" sections={SECTIONS} mainClassName="overflow-hidden">
+      <ModuleLayout pageKey="operations" sections={SECTIONS} mainClassName="overflow-hidden" title="Opérations Boursières">
         <div className="h-full flex flex-col">
           <div className="shrink-0"><TickerBar /></div>
-          <ResizablePanesGrid
+          <PanelGrid
+            rows={panelRows}
             pageKey="operations"
-            rows={[{
-              id: 'ops-row',
-              cells: [
-                { id: 'ops-left', content: (
-                  <div className="h-full overflow-auto p-4 space-y-4">
-                    {SECTIONS.slice(0, 8).map(item => (
-                      <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false}>
-                        <SectionCard>
-                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
-                            <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                            <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
-                          </div>
-                          {renderSection(item.id as SectionId)}
-                        </SectionCard>
-                      </ModuleSection>
-                    ))}
-                  </div>
-                )},
-                { id: 'ops-right', content: (
-                  <div className="h-full overflow-auto p-4 space-y-4">
-                    {SECTIONS.slice(8).map(item => (
-                      <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false}>
-                        <SectionCard>
-                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
-                            <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                            <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
-                          </div>
-                          {renderSection(item.id as SectionId)}
-                        </SectionCard>
-                      </ModuleSection>
-                    ))}
-                  </div>
-                )},
-              ]
-            }]}
+            onHide={id => toggleSection('operations', id)}
           />
         </div>
       </ModuleLayout>

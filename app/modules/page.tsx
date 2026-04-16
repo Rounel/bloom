@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useCommentStore } from '@/lib/comment-store'
 import Link from 'next/link'
 import {
   Globe,
@@ -120,7 +121,7 @@ const modules: Module[] = [
     label: 'Mon Compte',
     sublabel: 'Profil & Préférences',
     description: 'Gérez votre compte, vos préférences et vos paramètres de sécurité.',
-    icon: Settings,
+    icon: User,
     href: '/terminal/my-account',
     borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
     iconColor: 'text-primary',
@@ -344,7 +345,7 @@ function HomeSlot({
           </div>
           </div>
 
-          <div className="relative z-10 w-full max-w-360 grid grid-cols-4 gap-5">
+          <div className="relative z-10 w-full max-w-360 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {modules.map(mod => {
               const Icon = mod.icon
               return (
@@ -352,13 +353,14 @@ function HomeSlot({
                   key={mod.id}
                   onClick={() => onOpen(slotId, mod.id)}
                   className={cn(
-                    'group flex flex-col items-center justify-center gap-5 rounded-2xl',
+                    'group flex flex-row items-center justify-center gap-5 rounded-2xl',
                     'bg-card border-3 border-primary transition-all duration-300',
                     'hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-navy px-4 py-6',
                     mod.borderColor,
+                    'lg:flex-col',
                   )}
                 >
-                  <Icon className={cn('size-20', mod.iconColor)} strokeWidth={1.5} />
+                  <Icon className={cn('size-10 mr-auto', 'lg:size-20 lg:mr-0', mod.iconColor)} strokeWidth={1.5} />
                   <p className="text-base md:text-lg lg:text-2xl font-black text-foreground leading-tight text-center">
                     {mod.label}
                   </p>
@@ -547,13 +549,13 @@ function Taskbar({
               title={isActive ? 'Réduire' : 'Restaurer'}
             >
               <Icon className={cn('w-3 h-3 shrink-0', isActive ? 'text-primary' : 'text-primary')} />
-              <span className="hidden sm:inline truncate max-w-28">{mod.label}</span>
+              <span className="hidden lg:inline truncate max-w-28">{mod.label}</span>
               {/* Active indicator dot */}
               {isActive && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-0.5 shrink-0" />}
             </button>
             <button
               onClick={() => onClose(moduleId)}
-              className="pr-1.5 py-1.5 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+              className="pr-1.5 py-1.5 text-muted-foreground hover:text-destructive opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
               title="Fermer">
               <X className="w-2.5 h-2.5" />
             </button>
@@ -707,6 +709,13 @@ export default function ModulesPage() {
 
   const isInitialHome = slots.length === 1 && slots[0].moduleId === null && minimized.length === 0
 
+  // Masque le bouton flottant de commentaire quand un module est ouvert
+  const setHideButton = useCommentStore(s => s.setHideButton)
+  useEffect(() => {
+    setHideButton(!isInitialHome)
+    return () => setHideButton(false)
+  }, [isInitialHome, setHideButton])
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -728,7 +737,7 @@ export default function ModulesPage() {
             </p>
           </div>
 
-          <div className="relative z-10 w-full max-w-360 grid grid-cols-4 gap-5">
+          <div className="relative z-10 w-full max-w-360 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {modules.map(mod => {
               const Icon = mod.icon
               return (
@@ -736,13 +745,14 @@ export default function ModulesPage() {
                   key={mod.id}
                   onClick={() => openInSlot('slot-1', mod.id)}
                   className={cn(
-                    'group flex flex-col items-center justify-center gap-5 rounded-2xl',
+                    'group flex flex-row items-center justify-center gap-5 rounded-2xl',
                     'bg-card border-3 border-primary transition-all duration-300',
                     'hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-navy px-4 py-6',
                     mod.borderColor,
+                    'lg:flex-col',
                   )}
                 >
-                  <Icon className={cn('size-20', mod.iconColor)} strokeWidth={1.5} />
+                  <Icon className={cn('size-10 mr-auto', 'lg:size-20 lg:mr-0', mod.iconColor)} strokeWidth={1.5} />
                   <p className="text-base md:text-lg lg:text-2xl font-black text-foreground leading-tight text-center">
                     {mod.label}
                   </p>
