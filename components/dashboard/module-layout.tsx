@@ -127,7 +127,7 @@ export function ModuleLayout({
       <aside
         className={cn(
           'shrink-0 flex flex-col bg-card border-r border-border/50 transition-all duration-200 overflow-hidden',
-          open ? 'w-44' : 'w-10',
+          open ? 'w-50' : 'w-10',
         )}
       >
         {/* Header */}
@@ -172,13 +172,13 @@ export function ModuleLayout({
               >
                 <Icon
                   className={cn(
-                    'w-3.5 h-3.5 shrink-0',
+                    'size-4 shrink-0',
                     visible ? 'text-primary' : 'text-muted-foreground/30',
                   )}
                 />
                 {open && (
                   <>
-                    <span className="flex-1 text-[11px] font-medium truncate">{s.label}</span>
+                    <span className="flex-1 text-[14px] font-medium truncate">{s.label}</span>
                     {visible
                       ? <Eye    className="w-3 h-3 shrink-0 text-primary/50" />
                       : <EyeOff className="w-3 h-3 shrink-0 text-muted-foreground/30" />}

@@ -115,6 +115,16 @@ const modules: Module[] = [
     borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
     iconColor: 'text-primary',
   },
+  {
+    id: 'my-account',
+    label: 'Mon Compte',
+    sublabel: 'Profil & Préférences',
+    description: 'Gérez votre compte, vos préférences et vos paramètres de sécurité.',
+    icon: Settings,
+    href: '/terminal/my-account',
+    borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor: 'text-primary',
+  },
 ]
 
 // ─── Background network pattern ────────────────────────────────────────────────
@@ -343,8 +353,8 @@ function HomeSlot({
                   onClick={() => onOpen(slotId, mod.id)}
                   className={cn(
                     'group flex flex-col items-center justify-center gap-5 rounded-2xl',
-                    'bg-card border border-border transition-all duration-300',
-                    'hover:-translate-y-1.5 hover:shadow-2xl px-4 py-6',
+                    'bg-card border-3 border-primary transition-all duration-300',
+                    'hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-navy px-4 py-6',
                     mod.borderColor,
                   )}
                 >
@@ -727,8 +737,8 @@ export default function ModulesPage() {
                   onClick={() => openInSlot('slot-1', mod.id)}
                   className={cn(
                     'group flex flex-col items-center justify-center gap-5 rounded-2xl',
-                    'bg-card border border-border transition-all duration-300',
-                    'hover:-translate-y-1.5 hover:shadow-2xl px-4 py-6',
+                    'bg-card border-3 border-primary transition-all duration-300',
+                    'hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-navy px-4 py-6',
                     mod.borderColor,
                   )}
                 >

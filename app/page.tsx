@@ -11,7 +11,7 @@ const MODULES = [
     name: 'Dashboard',
     description: 'Vue d\'ensemble temps réel, indices BRVM, cours des valeurs, flux d\'actualités et alertes consolidés en un seul espace.',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-12">
         <rect x="3" y="3" width="7" height="7" rx="1" />
         <rect x="14" y="3" width="7" height="7" rx="1" />
         <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -25,7 +25,7 @@ const MODULES = [
     name: 'Analyse',
     description: 'Analyse technique et fondamentale approfondie, graphiques interactifs, ratios financiers, scorecard de risque et notations.',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-12">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
@@ -36,7 +36,7 @@ const MODULES = [
     name: 'Macro',
     description: 'Indicateurs macroéconomiques des pays de l\'UEMOA, PIB, inflation, balance commerciale, devises et finances publiques.',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-12">
         <circle cx="12" cy="12" r="10" />
         <line x1="2" y1="12" x2="22" y2="12" />
         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -49,7 +49,7 @@ const MODULES = [
     name: 'Portefeuille',
     description: 'Gestion et suivi de portefeuille, allocation d\'actifs, performance historique, analyse de risque et simulateur de scénarios.',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-12">
         <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
       </svg>
     ),
@@ -60,7 +60,7 @@ const MODULES = [
     name: 'Communication',
     description: 'Agrégation de flux d\'informations, actualités marchés, alertes personnalisées, web TV financière et ressources éducatives.',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-12">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       </svg>
     ),
@@ -71,7 +71,7 @@ const MODULES = [
     name: 'Opérations',
     description: 'Suivi opérationnel des ordres de bourse, transactions, comptes clients et reporting réglementaire en temps réel.',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-12">
         <polyline points="9 11 12 14 22 4" />
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
       </svg>
@@ -144,7 +144,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[oklch(0.145_0_0)] text-[oklch(0.985_0_0)] font-[var(--font-lato)]">
+    <div className="min-h-screen bg-white text-[oklch(0.985_0_0)] font-(--font-lato)">
 
       {/* Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-[oklch(0.269_0_0)] bg-[oklch(0.145_0_0)]/90 backdrop-blur-md">
@@ -191,7 +191,7 @@ export default function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-24">
           <div className="max-w-3xl">
 
-            <h1 className="text-5xl sm:text-6xl font-bold leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-5xl text-foreground sm:text-6xl font-bold leading-[1.1] tracking-tight mb-6">
               La plateforme de référence pour les{' '}
               <span
                 style={{
@@ -205,7 +205,7 @@ export default function LandingPage() {
               </span>
             </h1>
 
-            <p className="text-lg text-[oklch(0.65_0_0)] leading-relaxed mb-10 max-w-2xl">
+            <p className="text-lg text-[oklch(0.5_0_0)] leading-relaxed mb-10 max-w-2xl">
               Bloomfield Terminal centralise les données BRVM, les indicateurs macroéconomiques de l'UEMOA et les flux d'actualités en un espace de travail professionnel, configurable et haute performance.
             </p>
 
@@ -221,7 +221,7 @@ export default function LandingPage() {
               </a>
               <Link
                 href="/auth/sign-in"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded border border-[oklch(0.269_0_0)] text-sm text-[oklch(0.7_0_0)] hover:border-[oklch(0.4_0_0)] hover:text-[oklch(0.985_0_0)] transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded border border-[oklch(0.269_0_0)]/50 text-sm text-[oklch(0.5_0_0)] hover:border-[oklch(0.4_0_0)] hover:text-[oklch(0.185_0_0)] transition-colors"
               >
                 Accéder au terminal
               </Link>
@@ -237,7 +237,7 @@ export default function LandingPage() {
               { value: '∞', label: 'données en temps réel' },
             ].map((stat) => (
               <div key={stat.label}>
-                <div className="text-3xl font-bold text-[oklch(0.985_0_0)]">{stat.value}</div>
+                <div className="text-3xl font-bold text-foreground">{stat.value}</div>
                 <div className="text-sm text-[oklch(0.55_0_0)] mt-0.5">{stat.label}</div>
               </div>
             ))}
@@ -246,7 +246,7 @@ export default function LandingPage() {
       </section>
 
       {/* Advantages */}
-      <section className="py-24 border-t border-[oklch(0.269_0_0)]">
+      <section className="py-24 border-t bg-navy border-[oklch(0.269_0_0)]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-xl mb-16">
             <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-3">
@@ -281,7 +281,7 @@ export default function LandingPage() {
             <p className="text-xs font-semibold tracking-widest uppercase text-[oklch(0.6_0.118_184.704)] mb-3">
               Modules
             </p>
-            <h2 className="text-3xl font-bold leading-tight">
+            <h2 className="text-3xl font-bold leading-tight text-foreground">
               Six espaces de travail dédiés
             </h2>
             <p className="text-[oklch(0.55_0_0)] mt-3 text-sm leading-relaxed">
@@ -304,20 +304,20 @@ export default function LandingPage() {
                   />
                 </div>
                 <div
-                  className={`flex items-start flex-col gap-4 p-5 ${i % 2 === 0 ? 'rounded-r-md' : 'rounded-l-md'} border border-[oklch(0.269_0_0)] bg-[oklch(0.18_0_0)] hover:border-[oklch(0.269_0_0)]/80 hover:bg-[oklch(0.19_0_0)] transition-all group`}
+                  className={`flex items-start flex-col gap-4 p-5 ${i % 2 === 0 ? 'rounded-r-md' : 'rounded-l-md'} hover:border-[oklch(0.269_0_0)]/80  transition-all group`}
                 >
-                  <div className="shrink-0 size-20 rounded-lg border border-[oklch(0.269_0_0)] bg-[oklch(0.2_0_0)] flex items-center justify-center text-primary group-hover:border-[oklch(0.646_0.222_41.116)]/30 transition-colors">
+                  <div className="shrink-0 size-20 rounded-lg bg-primary flex items-center justify-center text-white group-hover:border-[oklch(0.646_0.222_41.116)]/30 transition-colors">
                     {mod.icon}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-base md:text-lg lg:text-3xl">{mod.name}</h3>
+                      <h3 className="font-bold text-base md:text-lg text-foreground lg:text-3xl">{mod.name}</h3>
                     </div>
                     <ul className="list-disc list-inside">
                       {mod.description.split(',').map((item, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <Dot className='text-primary' />
-                          <span className="text-sm md:text-base text-[oklch(0.55_0_0)] leading-relaxed capitalize">{item.trim()}</span>
+                        <li key={i} className="flex items-center my-4 gap-2">
+                          <Dot className='text-primary size-10' />
+                          <span className="text-sm md:text-base lg:text-lg text-[oklch(0.55_0_0)] leading-relaxed capitalize">{item.trim()}</span>
                         </li>
                       ))}
                     </ul>
@@ -383,24 +383,24 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[oklch(0.269_0_0)] py-10">
+      <footer className="border-t bg-[oklch(0.145_0_0)]/90 border-[oklch(0.269_0_0)] py-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
               B
             </div>
-            <span className="text-xs font-bold tracking-widest uppercase text-[oklch(0.55_0_0)]">
+            <span className="text-xs font-bold tracking-widest uppercase text-[oklch(0.75_0_0)]">
               Bloomfield Terminal
             </span>
           </div>
 
-          <p className="text-xs text-[oklch(0.4_0_0)]">
+          <p className="text-xs text-[oklch(0.6_0_0)]">
             © {new Date().getFullYear()} Bloomfield Investment Corporation. Tous droits réservés.
           </p>
 
           <div className="flex items-center gap-6">
             {['Mentions légales', 'Confidentialité', 'Contact'].map((item) => (
-              <a key={item} href="#" className="text-xs text-[oklch(0.4_0_0)] hover:text-[oklch(0.65_0_0)] transition-colors">
+              <a key={item} href="#" className="text-xs text-[oklch(0.6_0_0)] hover:text-[oklch(0.85_0_0)] transition-colors">
                 {item}
               </a>
             ))}
