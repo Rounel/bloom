@@ -680,18 +680,19 @@ export default function DashboardPage() {
 
       {/* overflow-hidden so the grid can own its vertical space */}
       <ModuleLayout pageKey="dashboard" sections={SECTIONS} mainClassName="overflow-hidden" title="Dashboard">
-        <div className="h-full flex flex-col p-2 gap-2">
+        <div className="shrink-0"><TickerBar /></div>
+        <div className="h-full flex flex-col gap-1">
 
           {/* Summary strip — shrinks to its content height */}
           <ModuleSection pageKey="dashboard" id="summary" resizable={false} className="shrink-0">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
               {[
                 { label: 'Vol. Total',       value: '198 764',  sub: 'titres échangés',    color: 'text-foreground'  },
                 { label: 'Hausses',          value: '28',       sub: 'valeurs en hausse',  color: 'text-emerald-500' },
                 { label: 'Baisses',          value: '15',       sub: 'valeurs en baisse',  color: 'text-red-400'     },
                 { label: 'Capitalisation',   value: '7 962',    sub: 'Mrd XOF total',      color: 'text-primary'     },
               ].map(s => (
-                <div key={s.label} className="p-3 rounded-xl bg-card/60 border border-border/50 hover:border-border transition-colors">
+                <div key={s.label} className="p-3 rounded-sm bg-card/60 border border-border/50 hover:border-border transition-colors">
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label} ({s.sub})</div>
                   <div className={cn('text-2xl font-black font-mono mt-1', s.color)}>{s.value}</div>
                 </div>

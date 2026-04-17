@@ -519,7 +519,7 @@ export default function SignInPage() {
               </div>
 
               {/* Demo credentials box */}
-              <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3.5 space-y-2">
+              {/* <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3.5 space-y-2">
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                   <p className="text-xs font-bold text-primary">Comptes de démonstration</p>
@@ -532,7 +532,7 @@ export default function SignInPage() {
                     admin@bloomfield.com · <span className="text-foreground">Admin@2024</span>
                   </p>
                 </div>
-              </div>
+              </div> */}
 
               <form onSubmit={handleCredentials} className="space-y-4">
                 {/* Email */}

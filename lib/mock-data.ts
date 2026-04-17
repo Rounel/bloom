@@ -10,6 +10,16 @@ export interface Stock {
   sector: string
   country: string
 }
+// BRVM Stock Data
+export interface Indices {
+  symbol: string
+  name: string
+  price: number
+  change: number
+  changePercent: number
+  volume: number
+  marketCap: number
+}
 
 export const brvmStocks: Stock[] = [
   { symbol: 'SNTS', name: 'SONATEL', price: 15850, change: 250, changePercent: 1.60, volume: 12450, marketCap: 1585000000000, sector: 'Télécommunications', country: 'Sénégal' },
@@ -24,6 +34,12 @@ export const brvmStocks: Stock[] = [
   { symbol: 'SLBC', name: 'SOLIBRA', price: 175000, change: 2500, changePercent: 1.45, volume: 124, marketCap: 525000000000, sector: 'Industrie', country: 'Côte d\'Ivoire' },
   { symbol: 'BOAM', name: 'BOA MALI', price: 1850, change: -25, changePercent: -1.33, volume: 3200, marketCap: 185000000000, sector: 'Finance', country: 'Mali' },
   { symbol: 'SOGC', name: 'SOGB CI', price: 4100, change: 95, changePercent: 2.37, volume: 1890, marketCap: 287000000000, sector: 'Agriculture', country: 'Côte d\'Ivoire' },
+]
+
+export const brvmIndices: Indices[] = [
+  { symbol: 'BRVM-C', name: 'BRVM Compose', price: 12500, change: -150, changePercent: -1.19, volume: 8230, marketCap: 875000000000 },
+  { symbol: 'BRVM-30', name: 'BRVM 30', price: 15850, change: 250, changePercent: 1.60, volume: 12450, marketCap: 1585000000000  },
+  { symbol: 'BRVM-PRES', name: 'BRVM Prestige', price: 4200, change: 85, changePercent: 2.07, volume: 5680, marketCap: 420000000000 },
 ]
 
 // Macroeconomic Indicators

@@ -55,7 +55,7 @@ export default function RootLayout({
     <html lang="fr" className="">
       <head>
         {/* Apply saved theme before first paint to avoid flash */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('bloomfield-theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('bloomfield-theme');if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})()` }} />
       </head>
       <body className={`${lato.variable} ${roboto.variable} antialiased bg-background text-foreground`}>
         <CommentPanel />

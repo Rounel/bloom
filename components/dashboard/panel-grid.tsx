@@ -8,7 +8,7 @@ import {
   X, Maximize2, Minimize2,
   FileDown, ImageDown,
   ZoomIn, ZoomOut,
-  GripVertical,
+  GripVertical, Copy,
 } from 'lucide-react'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -161,6 +161,8 @@ function startAxisResize(opts: {
 
 function equalArr(n: number) { return Array.from({ length: n }, () => 100 / n) }
 
+const DEFAULT_ROW_HEIGHT = 380
+
 function initialColWidths(cells: PanelCell[]) {
   const total = cells.reduce((s, c) => s + (c.initialFlex ?? 1), 0)
   return cells.map(c => ((c.initialFlex ?? 1) / total) * 100)
@@ -170,8 +172,6 @@ function initialColWidths(cells: PanelCell[]) {
 
 const MOBILE_DEFAULT_H = 300
 
-/** Drag pointer-based pour réordonnancement mobile. Utilise une variable locale
- *  pour éviter les closures stale dans le handler onUp. */
 function startMobileDrag({
   cellId, cellRefs, onUpdate, onCommit,
 }: {
@@ -207,6 +207,20 @@ function startMobileDrag({
   document.addEventListener('pointerup', onUp)
 }
 
+// ─── Export CSV par défaut (scrape la première <table> du panneau) ────────────
+
+function exportTableCSV(chartId: string, title: string) {
+  const container = document.querySelector(`[data-chart-id="${chartId}"]`)
+  const table = container?.querySelector('table')
+  if (!table) return
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent?.trim() ?? '')
+  const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
+    Array.from(tr.querySelectorAll('td')).map(td => td.textContent?.trim() ?? '')
+  )
+  if (!headers.length && !rows.length) return
+  downloadCSV(headers, rows, `bloomfield-${title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`)
+}
+
 // ─── Bouton d'action ──────────────────────────────────────────────────────────
 
 function ActionBtn({ title, onClick, hoverClass, children }: {
@@ -230,7 +244,7 @@ function ActionBtn({ title, onClick, hoverClass, children }: {
 
 function PanelCard({
   cell, isDraggingThis, isDragTarget, isMaximized,
-  onMaximize, onHide,
+  onMaximize, onHide, onDuplicate,
   onDragStart, onDragEnd, onDragOver, onDrop,
   onMobileDragStart,
 }: {
@@ -240,11 +254,11 @@ function PanelCard({
   isMaximized?: boolean
   onMaximize: () => void
   onHide?: () => void
+  onDuplicate?: () => void
   onDragStart?: () => void
   onDragEnd?: () => void
   onDragOver?: (e: React.DragEvent) => void
   onDrop?: () => void
-  /** Drag pointer-based pour mobile (remplace draggable HTML) */
   onMobileDragStart?: (e: React.PointerEvent) => void
 }) {
   const Icon = cell.icon
@@ -256,7 +270,7 @@ function PanelCard({
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={cn(
-        'rounded-xl border bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden h-full transition-all duration-200',
+        'rounded-sm border bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden h-full transition-all duration-200',
         isDraggingThis && 'opacity-40 scale-[0.98] shadow-none',
         isDragTarget && 'ring-2 ring-primary/50 border-primary/30 shadow-lg shadow-primary/10',
         isMaximized && 'border-primary/30',
@@ -277,7 +291,7 @@ function PanelCard({
         {draggable && (
           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
         )}
-        {/* Grip mobile (pointer-based, touch-none pour bloquer le scroll) */}
+        {/* Grip mobile */}
         {onMobileDragStart && (
           <div
             onPointerDown={e => { e.preventDefault(); onMobileDragStart(e) }}
@@ -287,19 +301,28 @@ function PanelCard({
           </div>
         )}
 
-        {/* <Icon className="w-4 h-4 text-primary shrink-0" /> */}
         <span className="text-sm font-semibold text-foreground truncate flex-1">{cell.title}</span>
 
         <div className="flex items-center gap-1 shrink-0">
-          {cell.csvExport && (
-            <ActionBtn title="Exporter CSV" hoverClass="hover:text-emerald-500" onClick={() => cell.csvExport!()}>
-              <FileDown className="size-3.5" />
-            </ActionBtn>
-          )}
+          <ActionBtn
+            title="Exporter CSV"
+            hoverClass="hover:text-emerald-500"
+            onClick={() => cell.csvExport
+              ? cell.csvExport()
+              : exportTableCSV(cell.imageExportId ?? cell.id, cell.title)
+            }
+          >
+            <FileDown className="size-3.5" />
+          </ActionBtn>
           {cell.imageExportId && (
             <ActionBtn title="Exporter image PNG" hoverClass="hover:text-blue-400"
               onClick={() => downloadChartAsPNG(cell.imageExportId!, `bloomfield-${cell.imageExportId}-${new Date().toISOString().slice(0, 10)}.png`)}>
               <ImageDown className="size-3.5" />
+            </ActionBtn>
+          )}
+          {onDuplicate && (
+            <ActionBtn title="Dupliquer ce panneau" hoverClass="hover:text-violet-400" onClick={onDuplicate}>
+              <Copy className="size-3.5" />
             </ActionBtn>
           )}
           <ActionBtn
@@ -328,7 +351,7 @@ function PanelCard({
 // ─── Ligne desktop ────────────────────────────────────────────────────────────
 
 function PanelRowInner({
-  cells, widths, onWidthsChange, onMaximize, onHide,
+  cells, widths, onWidthsChange, onMaximize, onHide, onDuplicate,
   dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd,
 }: {
   cells: PanelCell[]
@@ -336,6 +359,7 @@ function PanelRowInner({
   onWidthsChange: (w: number[]) => void
   onMaximize: (id: string) => void
   onHide?: (id: string) => void
+  onDuplicate: (id: string) => void
   dragging?: string | null
   dragOver?: string | null
   onDragStart?: (id: string) => void
@@ -357,6 +381,7 @@ function PanelRowInner({
               isMaximized={false}
               onMaximize={() => onMaximize(cell.id)}
               onHide={onHide ? () => onHide(cell.id) : undefined}
+              onDuplicate={() => onDuplicate(cell.id)}
               onDragStart={onDragStart ? () => onDragStart(cell.id) : undefined}
               onDragEnd={onDragEnd}
               onDragOver={onDragOver ? e => onDragOver(e, cell.id) : undefined}
@@ -388,10 +413,10 @@ function PanelRowInner({
   )
 }
 
-// ─── Liste mobile (colonne unique, réordonnable, redimensionnable) ────────────
+// ─── Liste mobile ─────────────────────────────────────────────────────────────
 
 function MobilePanelList({
-  cells, order, onOrderChange, heights, onHeightChange, onMaximize, onHide,
+  cells, order, onOrderChange, heights, onHeightChange, onMaximize, onHide, onDuplicate,
 }: {
   cells: PanelCell[]
   order: string[]
@@ -400,6 +425,7 @@ function MobilePanelList({
   onHeightChange: (id: string, h: number) => void
   onMaximize: (id: string) => void
   onHide?: (id: string) => void
+  onDuplicate: (id: string) => void
 }) {
   const [dragging, setDragging]     = useState<string | null>(null)
   const [dragTarget, setDragTarget] = useState<string | null>(null)
@@ -424,6 +450,7 @@ function MobilePanelList({
               isMaximized={false}
               onMaximize={() => onMaximize(cell.id)}
               onHide={onHide ? () => onHide(cell.id) : undefined}
+              onDuplicate={() => onDuplicate(cell.id)}
               onMobileDragStart={e => {
                 startMobileDrag({
                   cellId: cell.id,
@@ -441,7 +468,6 @@ function MobilePanelList({
             />
           </div>
 
-          {/* Poignée de redimensionnement vertical mobile */}
           {i < orderedCells.length - 1 && (
             <div
               onPointerDown={e => {
@@ -472,26 +498,30 @@ function MobilePanelList({
 
 // ─── PanelGrid (export public) ────────────────────────────────────────────────
 
+interface DuplicateEntry {
+  rowId: string
+  afterId: string
+  cell: PanelCell
+}
+
 export function PanelGrid({
   rows, pageKey, onHide,
-  dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd,
 }: {
   rows: PanelRow[]
   pageKey?: string
   onHide?: (id: string) => void
-  dragging?: string | null
-  dragOver?: string | null
-  onDragStart?: (id: string) => void
-  onDragOver?: (e: React.DragEvent, id: string) => void
-  onDrop?: (id: string) => void
-  onDragEnd?: () => void
 }) {
-  const [maximized, setMaximized]       = useState<string | null>(null)
-  const [colWidthsMap, setColWidthsMap] = useState<Record<string, number[]>>({})
-  const [rowHeights, setRowHeights]     = useState<number[]>([])
-  const containerRef                     = useRef<HTMLDivElement>(null)
+  const [maximized, setMaximized]           = useState<string | null>(null)
+  const [colWidthsMap, setColWidthsMap]     = useState<Record<string, number[]>>({})
+  const [rowHeights, setRowHeights]         = useState<number[]>([])
+  const [duplicates, setDuplicates]         = useState<DuplicateEntry[]>([])
+  // rowContents[rowId] = liste ordonnée des cell ids dans cette ligne (cross-row inclus)
+  const [rowContents, setRowContents]       = useState<Record<string, string[]>>({})
+  const [dragging, setDragging]             = useState<string | null>(null)
+  const [dragOver, setDragOver]             = useState<string | null>(null)
+  const containerRef                         = useRef<HTMLDivElement>(null)
 
-  // ── Détection mobile (< lg = 1024px) ──────────────────────────────────────
+  // ── Détection mobile ───────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1023px)')
@@ -502,7 +532,7 @@ export function PanelGrid({
   }, [])
 
   // ── État mobile ────────────────────────────────────────────────────────────
-  const [mobileOrder, setMobileOrder]           = useState<string[]>([])
+  const [mobileOrder, setMobileOrder]             = useState<string[]>([])
   const [mobileCellHeights, setMobileCellHeights] = useState<Record<string, number>>({})
 
   // ── Store visibilité ───────────────────────────────────────────────────────
@@ -510,19 +540,41 @@ export function PanelGrid({
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => { setHydrated(true) }, [])
 
-  const visibleRows = rows.map(row => ({
-    ...row,
-    visibleCells: row.cells.filter(c => {
-      if (!pageKey || !hydrated) return true
-      const cfg = configs[pageKey]?.[c.id]
-      return cfg === undefined ? true : cfg.visible
-    }),
-  })).filter(r => r.visibleCells.length > 0)
+  // ── Rows enrichis avec les duplicats ──────────────────────────────────────
+  const allRows: PanelRow[] = rows.map(row => {
+    const cells = [...row.cells]
+    for (const dup of duplicates.filter(d => d.rowId === row.id)) {
+      const idx = cells.findIndex(c => c.id === dup.afterId)
+      if (idx !== -1) cells.splice(idx + 1, 0, dup.cell)
+      else cells.push(dup.cell)
+    }
+    return { ...row, cells }
+  })
+
+  // Dictionnaire plat de toutes les cellules disponibles (allRows + duplicats)
+  const allCellsById = Object.fromEntries(allRows.flatMap(r => r.cells).map(c => [c.id, c]))
+
+  const isVisible = (cellId: string) => {
+    if (duplicates.some(d => d.cell.id === cellId)) return true
+    if (!pageKey || !hydrated) return true
+    const cfg = configs[pageKey]?.[cellId]
+    return cfg === undefined ? true : cfg.visible
+  }
+
+  const visibleRows = allRows.map(row => {
+    // Si rowContents est initialisé pour cette ligne, utilise-le (cross-row support)
+    const contents = rowContents[row.id]
+    const sourceCells = contents
+      ? contents.map(id => allCellsById[id]).filter(Boolean) as PanelCell[]
+      : row.cells
+    const visibleCells = sourceCells.filter(c => isVisible(c.id))
+    return { ...row, visibleCells }
+  }).filter(r => r.visibleCells.length > 0)
 
   const flatCells   = visibleRows.flatMap(r => r.visibleCells)
   const flatCellIds = flatCells.map(c => c.id).join(',')
 
-  // Synchronise l'ordre mobile quand les cellules visibles changent
+  // Synchronise l'ordre mobile
   useEffect(() => {
     setMobileOrder(prev => {
       const ids = flatCells.map(c => c.id)
@@ -532,10 +584,12 @@ export function PanelGrid({
     })
   }, [flatCellIds]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Desktop: hauteurs de lignes ────────────────────────────────────────────
+  // ── Desktop: hauteurs de lignes (pixels fixes) ────────────────────────────
   useEffect(() => {
     setRowHeights(prev =>
-      prev.length === visibleRows.length ? prev : equalArr(visibleRows.length),
+      prev.length === visibleRows.length
+        ? prev
+        : Array.from({ length: visibleRows.length }, (_, i) => prev[i] ?? DEFAULT_ROW_HEIGHT),
     )
   }, [visibleRows.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -549,27 +603,134 @@ export function PanelGrid({
     setColWidthsMap(prev => ({ ...prev, [rowKey(row)]: w }))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Drag-and-drop desktop (interne, cross-row) ────────────────────────────
+  const handleDragStart = useCallback((cellId: string) => {
+    setDragging(cellId)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent, cellId: string) => {
+    e.preventDefault()
+    setDragOver(cellId)
+  }, [])
+
+  const handleDrop = useCallback((cellId: string) => {
+    const from = dragging
+    setDragging(null)
+    setDragOver(null)
+    if (!from || from === cellId) return
+
+    setRowContents(prev => {
+      // Initialise rowContents depuis l'état visible courant si pas encore fait
+      const current: Record<string, string[]> = {}
+      for (const row of visibleRows) {
+        current[row.id] = prev[row.id] ?? row.visibleCells.map(c => c.id)
+      }
+      // Inclut aussi les lignes dont rowContents est déjà défini mais filtrées (cellules masquées)
+      for (const [rowId, ids] of Object.entries(prev)) {
+        if (!current[rowId]) current[rowId] = ids
+      }
+
+      // Trouve la ligne source (contient `from`) et cible (contient `cellId`)
+      let sourceRowId: string | null = null
+      let targetRowId: string | null = null
+      let targetIdx = -1
+
+      for (const [rowId, ids] of Object.entries(current)) {
+        if (ids.includes(from) && !sourceRowId) sourceRowId = rowId
+        const idx = ids.indexOf(cellId)
+        if (idx !== -1 && !targetRowId) { targetRowId = rowId; targetIdx = idx }
+      }
+
+      if (!sourceRowId || !targetRowId) return prev
+
+      // Retire `from` de sa ligne source
+      current[sourceRowId] = current[sourceRowId].filter(id => id !== from)
+
+      // Insère `from` devant `cellId` dans la ligne cible
+      const targetCells = [...current[targetRowId]]
+      // Recalcule targetIdx dans la liste après suppression éventuelle
+      const newTargetIdx = targetCells.indexOf(cellId)
+      targetCells.splice(newTargetIdx === -1 ? targetCells.length : newTargetIdx, 0, from)
+      current[targetRowId] = targetCells
+
+      return { ...prev, ...current }
+    })
+  }, [dragging, visibleRows])
+
+  const handleDragEnd = useCallback(() => {
+    setDragging(null)
+    setDragOver(null)
+  }, [])
+
+  // ── Duplication ────────────────────────────────────────────────────────────
+  const handleDuplicate = useCallback((cellId: string) => {
+    // Cherche dans les rows originales et dans les duplicats
+    let sourceCell: PanelCell | undefined
+    let rowId: string | undefined
+
+    for (const row of allRows) {
+      const found = row.cells.find(c => c.id === cellId)
+      if (found) { sourceCell = found; rowId = row.id; break }
+    }
+    if (!sourceCell || !rowId) return
+
+    const newId = `${cellId.replace(/-dup-\d+$/, '')}-dup-${Date.now()}`
+    const newCell: PanelCell = {
+      ...sourceCell,
+      id: newId,
+      title: `${sourceCell.title.replace(/ \(copie\)$/, '')} (copie)`,
+      content: React.isValidElement(sourceCell.content)
+        ? React.cloneElement(sourceCell.content as React.ReactElement)
+        : sourceCell.content,
+    }
+    setDuplicates(prev => [...prev, { rowId: rowId!, afterId: cellId, cell: newCell }])
+    // Met à jour rowContents si déjà initialisé pour cette ligne
+    setRowContents(prev => {
+      if (!prev[rowId!]) return prev
+      const ids = [...prev[rowId!]]
+      const afterIdx = ids.indexOf(cellId)
+      ids.splice(afterIdx === -1 ? ids.length : afterIdx + 1, 0, newId)
+      return { ...prev, [rowId!]: ids }
+    })
+  }, [allRows]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Masquage (original via store, duplicat via state local) ───────────────
+  const handleHide = useCallback((cellId: string) => {
+    if (duplicates.some(d => d.cell.id === cellId)) {
+      setDuplicates(prev => prev.filter(d => d.cell.id !== cellId))
+      setRowContents(prev => {
+        const next = { ...prev }
+        for (const rowId of Object.keys(next)) {
+          next[rowId] = next[rowId].filter(id => id !== cellId)
+        }
+        return next
+      })
+    } else {
+      onHide?.(cellId)
+    }
+    if (maximized === cellId) setMaximized(null)
+  }, [duplicates, onHide, maximized])
+
   const maximizedCell = maximized
-    ? rows.flatMap(r => r.cells).find(c => c.id === maximized) ?? null
+    ? allRows.flatMap(r => r.cells).find(c => c.id === maximized) ?? null
     : null
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div ref={containerRef} className="flex-1 min-h-0 flex flex-col">
+    <div ref={containerRef} className="flex-1 min-h-0 flex flex-col overflow-auto">
 
       {maximizedCell ? (
-        /* Panneau agrandi — identique desktop et mobile */
         <div className="flex-1 min-h-0">
           <PanelCard
             cell={maximizedCell}
             isMaximized
             onMaximize={() => setMaximized(null)}
-            onHide={onHide ? () => { onHide(maximizedCell.id); setMaximized(null) } : undefined}
+            onHide={() => handleHide(maximizedCell.id)}
+            onDuplicate={() => handleDuplicate(maximizedCell.id)}
           />
         </div>
 
       ) : isMobile ? (
-        /* Vue mobile : colonne unique scrollable, réordonnable, redimensionnable */
         <div className="flex-1 min-h-0 overflow-y-auto px-1 py-1">
           <MobilePanelList
             cells={flatCells}
@@ -578,27 +739,28 @@ export function PanelGrid({
             heights={mobileCellHeights}
             onHeightChange={(id, h) => setMobileCellHeights(prev => ({ ...prev, [id]: h }))}
             onMaximize={setMaximized}
-            onHide={onHide}
+            onHide={handleHide}
+            onDuplicate={handleDuplicate}
           />
         </div>
 
       ) : (
-        /* Vue desktop : grille multi-colonnes/lignes */
         visibleRows.map((row, i) => (
           <React.Fragment key={row.id}>
-            <div style={{ flex: `${rowHeights[i] ?? (100 / visibleRows.length)} 1 0%`, minHeight: 0 }}>
+            <div style={{ height: rowHeights[i] ?? DEFAULT_ROW_HEIGHT, flexShrink: 0 }}>
               <PanelRowInner
                 cells={row.visibleCells}
                 widths={getColWidths(row)}
                 onWidthsChange={w => setColWidths(row, w)}
                 onMaximize={setMaximized}
-                onHide={onHide}
+                onHide={handleHide}
+                onDuplicate={handleDuplicate}
                 dragging={dragging}
                 dragOver={dragOver}
-                onDragStart={onDragStart}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
-                onDragEnd={onDragEnd}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
               />
             </div>
 
@@ -606,15 +768,29 @@ export function PanelGrid({
               <div
                 onMouseDown={e => {
                   e.preventDefault()
-                  startAxisResize({
-                    startPx: e.clientY, startValues: rowHeights, idx: i,
-                    containerSizePx: () => containerRef.current?.getBoundingClientRect().height ?? 0,
-                    min: 8, cursor: 'row-resize', onUpdate: setRowHeights,
-                  })
+                  const startY = e.clientY
+                  const startH = rowHeights[i] ?? DEFAULT_ROW_HEIGHT
+                  const onMove = (me: MouseEvent) => {
+                    setRowHeights(prev => {
+                      const next = [...prev]
+                      next[i] = Math.max(120, startH + (me.clientY - startY))
+                      return next
+                    })
+                  }
+                  const onUp = () => {
+                    document.removeEventListener('mousemove', onMove)
+                    document.removeEventListener('mouseup', onUp)
+                    document.body.style.cursor = ''
+                    document.body.style.userSelect = ''
+                  }
+                  document.body.style.cursor = 'row-resize'
+                  document.body.style.userSelect = 'none'
+                  document.addEventListener('mousemove', onMove)
+                  document.addEventListener('mouseup', onUp)
                 }}
-                onDoubleClick={() => setRowHeights(equalArr(visibleRows.length))}
+                onDoubleClick={() => setRowHeights(prev => prev.map(() => DEFAULT_ROW_HEIGHT))}
                 draggable={false}
-                title="Glisser pour redimensionner · Double-clic pour égaliser"
+                title="Glisser pour redimensionner · Double-clic pour réinitialiser"
                 className="h-3 shrink-0 flex items-center justify-center cursor-row-resize group/rowhandle hover:bg-primary/8 transition-colors select-none"
               >
                 <div className="h-px w-10 bg-border/40 group-hover/rowhandle:h-[3px] group-hover/rowhandle:w-full group-hover/rowhandle:bg-primary/50 group-hover/rowhandle:rounded-full transition-all duration-150" />

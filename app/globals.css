@@ -6,7 +6,7 @@
 /* African Finance Terminal - Professional Dark Theme */
 :root {
   /* Light mode — fond clair, texte sombre */
-  --background: #dee2e8;
+  --background: #eeeff0;
   --foreground: oklch(0.10 0.01 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.10 0.01 260);
@@ -157,4 +157,10 @@ button {
 
 .animate-scroll-infinite:hover {
   animation-play-state: paused;
+}
+
+/* Hero slider progress bar */
+@keyframes progress-bar {
+  from { width: 0% }
+  to   { width: 100% }
 }

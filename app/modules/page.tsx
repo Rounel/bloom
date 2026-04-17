@@ -21,8 +21,11 @@ import {
   Minus,
   X,
   GripHorizontal,
+  Bell,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { newsItems } from '@/lib/mock-data'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +50,16 @@ interface Module {
 
 const modules: Module[] = [
   {
+    id: 'dashboard',
+    label: 'Dashboard & Options',
+    sublabel: 'Terminal Multi-fenêtres',
+    description: 'Terminal multi-fenêtres personnalisable. Drag & drop, thèmes et recherche intelligente.',
+    icon: LayoutDashboard,
+    href: '/terminal/dashboard',
+    borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor: 'text-primary',
+  },
+  {
     id: 'operations',
     label: 'Opérations Boursières',
     sublabel: 'BRVM & Marchés Africains',
@@ -57,22 +70,22 @@ const modules: Module[] = [
     iconColor: 'text-primary',
   },
   {
-    id: 'portfolio',
-    label: 'Portefeuille',
-    sublabel: 'Gestion & Suivi',
-    description: 'Suivez vos investissements, analysez vos performances et optimisez votre portefeuille.',
-    icon: Wallet,
-    href: '/terminal/portfolio',
-    borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
-    iconColor: 'text-primary',
-  },
-  {
     id: 'macro',
     label: 'Données Macroéconomiques',
     sublabel: 'UEMOA',
     description: 'PIB, inflation, finances publiques, balance commerciale et analyse régionale UEMOA.',
     icon: Globe,
     href: '/terminal/macro',
+    borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
+    iconColor: 'text-primary',
+  },
+  {
+    id: 'portfolio',
+    label: 'Portefeuille',
+    sublabel: 'Gestion & Suivi',
+    description: 'Suivez vos investissements, analysez vos performances et optimisez votre portefeuille.',
+    icon: Wallet,
+    href: '/terminal/portfolio',
     borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
     iconColor: 'text-primary',
   },
@@ -93,16 +106,6 @@ const modules: Module[] = [
     description: 'Actualités en temps réel, alertes critiques, Web TV et espace éducatif.',
     icon: Radio,
     href: '/terminal/communication',
-    borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
-    iconColor: 'text-primary',
-  },
-  {
-    id: 'dashboard',
-    label: 'Dashboard & Options',
-    sublabel: 'Terminal Multi-fenêtres',
-    description: 'Terminal multi-fenêtres personnalisable. Drag & drop, thèmes et recherche intelligente.',
-    icon: LayoutDashboard,
-    href: '/terminal/dashboard',
     borderColor: 'hover:border-primary/50 hover:shadow-primary/10',
     iconColor: 'text-primary',
   },
@@ -170,6 +173,118 @@ function NetworkBackground() {
   )
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Marché':              'text-blue-400',
+  'Entreprise':          'text-violet-400',
+  'Macro':               'text-amber-400',
+  'Banque':              'text-cyan-400',
+  'Agriculture':         'text-emerald-400',
+  'Énergie':             'text-orange-400',
+  'Politique Monétaire': 'text-rose-400',
+  'Événement':           'text-sky-400',
+}
+
+function timeAgo(timestamp: string): string {
+  const diff = Math.floor((new Date('2026-04-17').getTime() - new Date(timestamp).getTime()) / 60000)
+  if (diff < 60)   return `${diff} min`
+  if (diff < 1440) return `${Math.floor(diff / 60)} h`
+  return `${Math.floor(diff / 1440)} j`
+}
+
+function NotificationButton() {
+  const [readIds, setReadIds] = useState<Set<string>>(new Set())
+  const unread = newsItems.filter(n => !readIds.has(n.id)).length
+
+  const markAll = () => setReadIds(new Set(newsItems.map(n => n.id)))
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="relative p-2 rounded-lg hover:bg-white/10 transition-colors"
+          title="Notifications"
+        >
+          <Bell className="w-4 h-4 text-white/70" />
+          {unread > 0 && (
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 bg-secondary/20">
+          <span className="text-xs font-bold text-foreground">Notifications</span>
+          {unread > 0 && (
+            <button
+              onClick={markAll}
+              className="text-[10px] text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              Tout marquer lu
+            </button>
+          )}
+        </div>
+
+        {/* List */}
+        <div className="max-h-[420px] overflow-y-auto divide-y divide-border/40">
+          {newsItems.map(item => {
+            const isRead = readIds.has(item.id)
+            return (
+              <div
+                key={item.id}
+                onClick={() => setReadIds(prev => new Set([...prev, item.id]))}
+                className={cn(
+                  'flex gap-3 px-3 py-2.5 cursor-pointer transition-colors hover:bg-secondary/40',
+                  !isRead && 'bg-primary/[0.03]',
+                )}
+              >
+                {/* Dot lu/non-lu */}
+                <div className="pt-1 shrink-0">
+                  <span className={cn(
+                    'block w-1.5 h-1.5 rounded-full mt-0.5',
+                    isRead ? 'bg-transparent' : item.isBreaking ? 'bg-red-500' : 'bg-primary',
+                  )} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    {item.isBreaking && (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-red-400 uppercase">
+                        <Zap className="w-2 h-2 fill-red-400" /> Flash
+                      </span>
+                    )}
+                    <span className={cn('text-[9px] font-semibold uppercase tracking-wide', CATEGORY_COLORS[item.category] ?? 'text-muted-foreground')}>
+                      {item.category}
+                    </span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/60 shrink-0">
+                      {timeAgo(item.timestamp)}
+                    </span>
+                  </div>
+                  <p className={cn('text-xs leading-snug', isRead ? 'text-muted-foreground' : 'text-foreground font-medium')}>
+                    {item.title}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">{item.source}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        {unread === 0 && (
+          <div className="px-3 py-2 text-center text-[11px] text-muted-foreground border-t border-border/40">
+            Toutes les notifications ont été lues
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 // ─── Top bar ───────────────────────────────────────────────────────────────────
 
 function TopBar() {
@@ -215,6 +330,8 @@ function TopBar() {
           title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}>
           {isDark ? <Sun className="w-4 h-4 text-white/70" /> : <Moon className="w-4 h-4 text-white/70" />}
         </button>
+
+        <NotificationButton />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -337,15 +454,15 @@ function HomeSlot({
             <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none opacity-40">
               <NetworkBackground />
             </div>
-          <div className="relative z-10 text-center space-y-3">
-            <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">Modules</h1>
-            <p className="text-sm text-muted-foreground">
-              Sélectionnez un module pour accéder à vos outils d'analyse des marchés financiers africains.
-            </p>
-          </div>
+            {/* <div className="relative z-10 text-center space-y-3">
+              <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">Modules</h1>
+              <p className="text-sm text-muted-foreground">
+                Sélectionnez un module pour accéder à vos outils d'analyse des marchés financiers africains.
+              </p>
+            </div> */}
           </div>
 
-          <div className="relative z-10 w-full max-w-360 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="relative my-auto z-10 w-full max-w-360 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {modules.map(mod => {
               const Icon = mod.icon
               return (
@@ -528,7 +645,7 @@ function Taskbar({
             className={cn(
               'group flex items-center rounded border shrink-0 transition-colors',
               isActive
-                ? 'border-primary/40 bg-primary/15 cursor-default'
+                ? 'border-primary/40 bg-navy cursor-default'
                 : 'border-border bg-secondary/40 hover:bg-secondary/70 cursor-grab active:cursor-grabbing',
             )}
           >
@@ -541,15 +658,15 @@ function Taskbar({
             <button
               onClick={() => isActive ? onMinimize(moduleId) : onRestore(moduleId)}
               className={cn(
-                'flex items-center gap-1.5 py-1.5 text-[11px] font-medium transition-colors',
+                'flex items-center gap-1.5 py-1.5 text-[13px] font-medium transition-colors',
                 isActive
-                  ? 'pl-2.5 pr-2 text-primary hover:text-primary/80'
+                  ? 'pl-2.5 pr-2 text-white hover:text-primary/80'
                   : 'pl-1.5 pr-2 text-muted-foreground hover:text-foreground',
               )}
               title={isActive ? 'Réduire' : 'Restaurer'}
             >
-              <Icon className={cn('w-3 h-3 shrink-0', isActive ? 'text-primary' : 'text-primary')} />
-              <span className="hidden lg:inline truncate max-w-28">{mod.label}</span>
+              <Icon className={cn('w-3 h-3 shrink-0', isActive ? 'text-white' : 'text-primary')} />
+              <span className="hidden lg:inline truncate max-w-fit">{mod.label}</span>
               {/* Active indicator dot */}
               {isActive && <span className="w-1.5 h-1.5 rounded-full bg-primary ml-0.5 shrink-0" />}
             </button>
@@ -730,14 +847,14 @@ export default function ModulesPage() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,transparent_40%,var(--background)_100%)]" />
           </div>
 
-          <div className="relative z-10 text-center space-y-3">
+          {/* <div className="relative z-10 text-center space-y-3">
             <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">Modules</h1>
             <p className="text-sm text-muted-foreground">
               Sélectionnez un module pour accéder à vos outils d'analyse des marchés financiers africains.
             </p>
-          </div>
+          </div> */}
 
-          <div className="relative z-10 w-full max-w-360 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="relative my-auto z-10 w-full max-w-360 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {modules.map(mod => {
               const Icon = mod.icon
               return (

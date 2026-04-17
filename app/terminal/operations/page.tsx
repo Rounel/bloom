@@ -8,16 +8,16 @@ import {
 import {
   TrendingUp, TrendingDown, BarChart2, DollarSign,
   Newspaper, Tv, Globe, Activity, AlertTriangle,
-  ChevronUp, ChevronDown, Radio, Package, Flame,
-  ChevronLeft, ChevronRight, LayoutGrid, X,
+  ChevronUp, ChevronDown, Package, Flame,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   brvmStocks, marketIndices, sectorPerformance,
   currencyRates, commodities, newsItems, tvPrograms,
   sovereignYields, generateStockHistory,
+  brvmIndices,
 } from '@/lib/mock-data'
-import { ModuleLayout, ModuleSection, SectionDef } from '@/components/dashboard/module-layout'
+import { ModuleLayout, SectionDef } from '@/components/dashboard/module-layout'
 import { PanelGrid, PanelRow } from '@/components/dashboard/panel-grid'
 import { TickerBar } from '@/components/dashboard/ticker-bar'
 import { useModuleSectionsStore } from '@/lib/module-sections-store'
@@ -26,7 +26,8 @@ import { useModuleSectionsStore } from '@/lib/module-sections-store'
 
 type SectionId =
   | 'indices-africains'
-  | 'cours-brvm'
+  | 'cours-titres-actions'
+  | 'cours-indices-brvm'
   | 'heatmap-sectorielle'
   | 'cotations-brvm'
   | 'courbes-taux'
@@ -43,22 +44,23 @@ type SectionId =
   | 'web-tv'
 
 const SECTIONS: SectionDef[] = [
-  { id: 'indices-africains',   label: 'Indices Africains',    icon: Globe },
-  { id: 'cours-brvm',          label: 'Cours & Graphique',    icon: Activity },
-  { id: 'heatmap-sectorielle', label: 'Heatmap Sectorielle',  icon: Flame },
-  { id: 'cotations-brvm',      label: 'Cotations BRVM',       icon: BarChart2 },
-  { id: 'courbes-taux',        label: 'Courbes des Taux',     icon: TrendingUp },
-  { id: 'spreads-maturite',    label: 'Spreads Maturité',     icon: BarChart2 },
-  { id: 'devises-graphique',   label: 'Paires & Graphique',   icon: TrendingUp },
-  { id: 'devises-tableau',     label: 'Tableau FX',           icon: DollarSign },
-  { id: 'matieres-prix',       label: 'Prix Spot',            icon: Package },
-  { id: 'matieres-perf',       label: 'Perf. Matières',       icon: BarChart2 },
-  { id: 'top-movers',          label: 'Top Movers',           icon: TrendingUp },
-  { id: 'most-traded',         label: 'Plus Échangés',        icon: Activity },
-  { id: 'sector-trends',       label: 'Tendances Sect.',      icon: Flame },
-  { id: 'flash-alerts',        label: 'Alertes Flash',        icon: AlertTriangle },
-  { id: 'actualites',          label: 'Actualités',           icon: Newspaper },
-  { id: 'web-tv',              label: 'Web TV',               icon: Tv },
+  { id: 'indices-africains',   label: 'Indices Africains',         icon: Globe },
+  { id: 'cours-titres-actions', label: 'Cours des titres/actions', icon: Activity },
+  { id: 'cours-indices-brvm',  label: 'Cours des indices BRVM',    icon: Activity },
+  { id: 'heatmap-sectorielle', label: 'Heatmap Sectorielle',       icon: Flame },
+  { id: 'cotations-brvm',      label: 'Cotations BRVM',            icon: BarChart2 },
+  { id: 'courbes-taux',        label: 'Courbes des Taux',          icon: TrendingUp },
+  { id: 'spreads-maturite',    label: 'Spreads Maturité',          icon: BarChart2 },
+  { id: 'devises-graphique',   label: 'Paires & Graphique',        icon: TrendingUp },
+  { id: 'devises-tableau',     label: 'Tableau FX',                icon: DollarSign },
+  { id: 'matieres-prix',       label: 'Prix Spot',                 icon: Package },
+  { id: 'matieres-perf',       label: 'Perf. Matières',            icon: BarChart2 },
+  { id: 'top-movers',          label: 'Top Movers',                icon: TrendingUp },
+  { id: 'most-traded',         label: 'Plus Échangés',             icon: Activity },
+  { id: 'sector-trends',       label: 'Tendances Sect.',           icon: Flame },
+  { id: 'flash-alerts',        label: 'Alertes Flash',             icon: AlertTriangle },
+  { id: 'actualites',          label: 'Actualités',                icon: Newspaper },
+  { id: 'web-tv',              label: 'Web TV',                    icon: Tv },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -111,13 +113,53 @@ function IndicesAfricains() {
   )
 }
 
-function CoursBRVM() {
+function CoursTitresActions() {
   const [selected, setSelected] = useState(brvmStocks[0])
   const history = useMemo(() => generateStockHistory(selected.price, 60), [selected.price])
   return (
     <div className="p-4 space-y-3">
       <div className="flex flex-wrap gap-1.5">
         {brvmStocks.map(s => (
+          <button key={s.symbol} onClick={() => setSelected(s)}
+            className={cn('text-xs px-2 py-1 rounded border transition-colors font-mono', selected.symbol === s.symbol ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:bg-secondary/50')}>
+            {s.symbol}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-sm font-bold text-foreground">{selected.symbol}</span>
+          <span className="ml-2 text-xs text-muted-foreground">{selected.name}</span>
+        </div>
+        <ChangeChip value={selected.changePercent} />
+      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={history}>
+          <defs>
+            <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={selected.change >= 0 ? '#34d399' : '#f87171'} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={selected.change >= 0 ? '#34d399' : '#f87171'} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.4} />
+          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
+          <YAxis tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} domain={['auto', 'auto']} width={55} tickFormatter={v => v.toLocaleString('fr-FR')} />
+          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+            formatter={(v: number) => [v.toLocaleString('fr-FR') + ' XOF', 'Cours']} labelStyle={{ color: 'var(--muted-foreground)' }} />
+          <Area type="monotone" dataKey="close" stroke={selected.change >= 0 ? '#34d399' : '#f87171'} fill="url(#cGrad)" strokeWidth={1.5} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function CoursIndicesBRVM() {
+  const [selected, setSelected] = useState(brvmIndices[0])
+  const history = useMemo(() => generateStockHistory(selected.price, 60), [selected.price])
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex flex-wrap gap-1.5">
+        {brvmIndices.map(s => (
           <button key={s.symbol} onClick={() => setSelected(s)}
             className={cn('text-xs px-2 py-1 rounded border transition-colors font-mono', selected.symbol === s.symbol ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:bg-secondary/50')}>
             {s.symbol}
@@ -598,7 +640,8 @@ function WebTV() {
 
 const SECTION_TITLES: Record<SectionId, string> = {
   'indices-africains':   'Indices Africains',
-  'cours-brvm':          'Cours & Graphique',
+  'cours-titres-actions':'Cours des titres/actions',
+  'cours-indices-brvm':  'Cours des indices BRVM',
   'heatmap-sectorielle': 'Heatmap Sectorielle',
   'cotations-brvm':      'Cotations BRVM',
   'courbes-taux':        'Courbes des Taux Souverains',
@@ -618,7 +661,8 @@ const SECTION_TITLES: Record<SectionId, string> = {
 function renderSection(id: SectionId) {
   switch (id) {
     case 'indices-africains':   return <IndicesAfricains />
-    case 'cours-brvm':          return <CoursBRVM />
+    case 'cours-titres-actions': return <CoursTitresActions />
+    case 'cours-indices-brvm':  return <CoursIndicesBRVM />
     case 'heatmap-sectorielle': return <HeatmapSectorielle />
     case 'cotations-brvm':      return <CotationsBRVM />
     case 'courbes-taux':        return <CourbesTaux />
@@ -638,58 +682,24 @@ function renderSection(id: SectionId) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function cell(id: SectionId): PanelRow['cells'][0] {
+  const def = SECTIONS.find(s => s.id === id)!
+  return { id, title: SECTION_TITLES[id], icon: def.icon, content: renderSection(id) }
+}
+
 export default function OperationsPage() {
   const toggleSection = useModuleSectionsStore(s => s.toggle)
 
-  const panelRows: PanelRow[] = [{
-    id: 'ops-row',
-    cells: [
-      {
-        id: 'ops-left',
-        title: 'Marché & Données',
-        icon: BarChart2,
-        content: (
-          <div className="h-full overflow-auto p-4 space-y-4">
-            {SECTIONS.slice(0, 8).map(item => (
-              <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false}>
-                <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
-                    <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
-                  </div>
-                  <div className="flex-1 overflow-auto">
-                    {renderSection(item.id as SectionId)}
-                  </div>
-                </div>
-              </ModuleSection>
-            ))}
-          </div>
-        ),
-      },
-      {
-        id: 'ops-right',
-        title: 'Analyses & Actualités',
-        icon: Newspaper,
-        content: (
-          <div className="h-full overflow-auto p-4 space-y-4">
-            {SECTIONS.slice(8).map(item => (
-              <ModuleSection key={item.id} pageKey="operations" id={item.id} resizable={false}>
-                <div className="bg-card border border-border rounded-lg overflow-hidden flex flex-col">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-secondary/10">
-                    <item.icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-xs font-bold text-foreground">{SECTION_TITLES[item.id as SectionId]}</span>
-                  </div>
-                  <div className="flex-1 overflow-auto">
-                    {renderSection(item.id as SectionId)}
-                  </div>
-                </div>
-              </ModuleSection>
-            ))}
-          </div>
-        ),
-      },
-    ],
-  }]
+  const panelRows: PanelRow[] = [
+    { id: 'row-indices-cours',    cells: [cell('indices-africains'), cell('cours-titres-actions'), cell('cours-indices-brvm')] },
+    { id: 'row-heatmap-cotations',cells: [cell('heatmap-sectorielle'), cell('cotations-brvm')] },
+    { id: 'row-taux-spreads',     cells: [cell('courbes-taux'), cell('spreads-maturite')] },
+    { id: 'row-devises',          cells: [cell('devises-graphique'), cell('devises-tableau')] },
+    { id: 'row-matieres',         cells: [cell('matieres-prix'), cell('matieres-perf')] },
+    { id: 'row-movers',           cells: [cell('top-movers'), cell('most-traded')] },
+    { id: 'row-sector-alerts',    cells: [cell('sector-trends'), cell('flash-alerts')] },
+    { id: 'row-news-tv',          cells: [cell('actualites'), cell('web-tv')] },
+  ]
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">

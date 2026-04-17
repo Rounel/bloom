@@ -388,10 +388,6 @@ export default function CommunicationPage() {
         </div>
       </ModuleLayout>
 
-      <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
-        <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 5 — Communication & Éducation</span>
-        <span className="ml-auto text-xs text-muted-foreground">Données simulées — maquette de présentation</span>
-      </footer>
     </div>
   )
 }

@@ -22,10 +22,12 @@ import { PanelGrid, PanelRow, downloadCSV, ChartZoom, ZOOM_MAIN } from '@/compon
 import { useModuleSectionsStore } from '@/lib/module-sections-store'
 
 const SECTIONS: SectionDef[] = [
-  { id: 'kpis',        label: 'Indicateurs clés',     icon: Wallet },
-  { id: 'holdings',    label: 'Positions',             icon: BarChart2 },
+  { id: 'kpis',        label: 'Indicateurs clés',      icon: Wallet },
+  { id: 'holdings',    label: 'Titres',                icon: BarChart2 },
   { id: 'allocation',  label: 'Répartition',           icon: Eye },
-  { id: 'performance', label: 'Performance',           icon: TrendingUp },
+  { id: 'performance1', label: 'Perf. BRVM Composite',           icon: TrendingUp },
+  { id: 'performance2', label: 'Perf. BRVM 30',           icon: TrendingUp },
+  { id: 'performance3', label: 'Perf. BRVM Prestige',           icon: TrendingUp },
   { id: 'risk',        label: 'Métriques de risque',   icon: ShieldCheck },
   { id: 'simulator',   label: 'Simulateur d\'ordres',  icon: ArrowUpDown },
   { id: 'watchlist',   label: 'Surveillance',          icon: Star },
@@ -104,7 +106,7 @@ export default function PortfolioPage() {
       cells: [
         {
           id: 'holdings',
-          title: 'Positions en portefeuille',
+          title: 'Titres du portefeuille',
           icon: BarChart2,
           initialFlex: 2,
           csvExport: () => {
@@ -192,8 +194,8 @@ export default function PortfolioPage() {
       id: 'port-row-2',
       cells: [
         {
-          id: 'performance',
-          title: 'Performance vs BRVM Composite',
+          id: 'performance1',
+          title: 'Performance Portefeuille vs BRVM Composite',
           icon: TrendingUp,
           initialFlex: 2,
           csvExport: () => {
@@ -234,6 +236,108 @@ export default function PortfolioPage() {
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Area type="monotone" dataKey="value" name="Portefeuille" stroke="var(--chart-1)" fill="url(#pfGrad)" strokeWidth={2} />
                         <Area type="monotone" dataKey="benchmark" name="BRVM Composite" stroke="var(--chart-2)" fill="url(#bkGrad)" strokeWidth={2} strokeDasharray="4 2" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartZoom>
+            </div>
+          ),
+        },
+        {
+          id: 'performance2',
+          title: 'Performance Portefeuille vs BRVM 30',
+          icon: TrendingUp,
+          initialFlex: 2,
+          csvExport: () => {
+            const headers = ['Mois', 'Portefeuille', 'BRVM 30']
+            const rows = perfData.map(d => [d.month, d.value, d.benchmark])
+            downloadCSV(headers, rows, `bloomfield-performance-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          imageExportId: 'performance',
+          content: (
+            <div>
+              <div className="flex justify-end gap-1 mb-2">
+                {(['3M', '6M', '1A'] as const).map(r => (
+                  <button key={r} onClick={() => setPerfRange(r)}
+                    className={cn('px-2.5 py-1 rounded text-xs font-medium transition-colors',
+                      perfRange === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+                    )}>{r}</button>
+                ))}
+              </div>
+              <ChartZoom heights={ZOOM_MAIN} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={perfData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="pfGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                        <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                        <Tooltip {...tooltipStyle} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Area type="monotone" dataKey="value" name="Portefeuille" stroke="var(--chart-1)" fill="url(#pfGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="benchmark" name="BRVM 30" stroke="var(--chart-2)" fill="url(#bkGrad)" strokeWidth={2} strokeDasharray="4 2" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartZoom>
+            </div>
+          ),
+        },
+        {
+          id: 'performance3',
+          title: 'Performance Portefeuille vs BRVM Prestige',
+          icon: TrendingUp,
+          initialFlex: 2,
+          csvExport: () => {
+            const headers = ['Mois', 'Portefeuille', 'BRVM Prestige']
+            const rows = perfData.map(d => [d.month, d.value, d.benchmark])
+            downloadCSV(headers, rows, `bloomfield-performance-${new Date().toISOString().slice(0, 10)}.csv`)
+          },
+          imageExportId: 'performance',
+          content: (
+            <div>
+              <div className="flex justify-end gap-1 mb-2">
+                {(['3M', '6M', '1A'] as const).map(r => (
+                  <button key={r} onClick={() => setPerfRange(r)}
+                    className={cn('px-2.5 py-1 rounded text-xs font-medium transition-colors',
+                      perfRange === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+                    )}>{r}</button>
+                ))}
+              </div>
+              <ChartZoom heights={ZOOM_MAIN} defaultLevel={1}>
+                {(h) => (
+                  <div style={{ height: h }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={perfData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="pfGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                        <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                        <Tooltip {...tooltipStyle} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Area type="monotone" dataKey="value" name="Portefeuille" stroke="var(--chart-1)" fill="url(#pfGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="benchmark" name="BRVM Prestige" stroke="var(--chart-2)" fill="url(#bkGrad)" strokeWidth={2} strokeDasharray="4 2" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -413,7 +517,7 @@ export default function PortfolioPage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
 
       <ModuleLayout pageKey="portfolio" sections={SECTIONS} mainClassName="overflow-hidden" title="Portefeuille">
-        <div className="h-full flex flex-col p-4 gap-4">
+        <div className="h-full flex flex-col gap-2">
 
         <div className="shrink-0">
         <ModuleSection pageKey="portfolio" id="kpis" resizable={false}>
@@ -442,11 +546,6 @@ export default function PortfolioPage() {
 
         </div>
       </ModuleLayout>
-
-      <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
-        <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 2 — Gestion de Portefeuille</span>
-        <span className="ml-auto text-xs text-muted-foreground">Données simulées — maquette de présentation</span>
-      </footer>
     </div>
   )
 }
