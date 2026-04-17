@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, X, ChevronLeft, Trash2, Send, CheckCircle2 } from 'lucide-react'
+import { MessageSquare, X, ChevronLeft, Trash2, Send, CheckCircle2, Pencil, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCommentStore } from '@/lib/comment-store'
+import { trackVisitor } from '@/lib/visitor-tracker'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -116,11 +117,11 @@ function formatDate(iso: string) {
 
 // ─── Vue Composer ─────────────────────────────────────────────────────────────
 
-function ComposeView({ pathname }: { pathname: string }) {
+function ComposeView({ pathname, ip }: { pathname: string; ip: string | undefined }) {
   const { addComment, setView, comments } = useCommentStore()
-  const [text, setText]           = useState('')
-  const [panelId, setPanelId]     = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [text, setText]             = useState('')
+  const [panelId, setPanelId]       = useState('')
+  const [submitted, setSubmitted]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const panels      = ROUTE_PANELS[pathname] ?? []
@@ -139,6 +140,8 @@ function ComposeView({ pathname }: { pathname: string }) {
       routeLabel,
       panelId: selectedPanel?.id,
       panelLabel: selectedPanel?.label,
+      ip,
+      userAgent: navigator.userAgent,
     })
     setSubmitting(false)
     setText('')
@@ -253,8 +256,11 @@ function ComposeView({ pathname }: { pathname: string }) {
 // ─── Vue Liste ────────────────────────────────────────────────────────────────
 
 function ListView() {
-  const { comments, deleteComment, setView, loading } = useCommentStore()
-  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const { comments, deleteComment, updateComment, setView, loading } = useCommentStore()
+  const [confirmId, setConfirmId]   = useState<string | null>(null)
+  const [editingId, setEditingId]   = useState<string | null>(null)
+  const [editText, setEditText]     = useState('')
+  const [saving, setSaving]         = useState(false)
 
   const handleDelete = async (id: string) => {
     if (confirmId === id) {
@@ -262,8 +268,26 @@ function ListView() {
       setConfirmId(null)
     } else {
       setConfirmId(id)
+      setEditingId(null) // ferme l'édition si ouverte sur ce commentaire
       setTimeout(() => setConfirmId(c => c === id ? null : c), 3000)
     }
+  }
+
+  const startEdit = (id: string, text: string) => {
+    setEditingId(id)
+    setEditText(text)
+    setConfirmId(null)
+  }
+
+  const cancelEdit = () => { setEditingId(null); setEditText('') }
+
+  const handleSave = async (id: string) => {
+    if (!editText.trim() || saving) return
+    setSaving(true)
+    await updateComment(id, editText.trim())
+    setSaving(false)
+    setEditingId(null)
+    setEditText('')
   }
 
   return (
@@ -280,45 +304,95 @@ function ListView() {
             <p className="text-xs text-muted-foreground">Aucun commentaire pour l'instant.</p>
           </div>
         ) : (
-          comments.map(c => (
-            <div
-              key={c.id}
-              className="rounded-lg border border-border/50 bg-secondary/20 p-3 flex flex-col gap-2"
-            >
-              {/* Badges contexte */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">
-                  {c.routeLabel}
-                </Badge>
-                {c.panelLabel && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {c.panelLabel}
+          comments.map(c => {
+            const isEditing = editingId === c.id
+            return (
+              <div
+                key={c.id}
+                className="rounded-lg border border-border/50 bg-secondary/20 p-3 flex flex-col gap-2"
+              >
+                {/* Badges contexte */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">
+                    {c.routeLabel}
                   </Badge>
+                  {c.panelLabel && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      {c.panelLabel}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Texte ou champ d'édition */}
+                {isEditing ? (
+                  <div className="flex flex-col gap-1.5">
+                    <Textarea
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      className="text-xs resize-none min-h-[72px]"
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Escape') cancelEdit()
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSave(c.id)
+                      }}
+                    />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={cancelEdit}
+                        className="text-[10px] text-muted-foreground hover:text-foreground px-2 py-0.5 rounded hover:bg-secondary/60 transition-colors"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={() => handleSave(c.id)}
+                        disabled={!editText.trim() || saving}
+                        className={cn(
+                          'flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded transition-colors',
+                          editText.trim() && !saving
+                            ? 'bg-primary/15 text-primary hover:bg-primary/25'
+                            : 'text-muted-foreground/40 cursor-not-allowed',
+                        )}
+                      >
+                        <Check className="w-3 h-3" />
+                        {saving ? 'Sauvegarde…' : 'Enregistrer'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{c.text}</p>
+                )}
+
+                {/* Footer */}
+                {!isEditing && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-muted-foreground/60">{formatDate(c.timestamp)}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => startEdit(c.id, c.text)}
+                        title="Modifier"
+                        className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors text-muted-foreground/50 hover:text-primary hover:bg-primary/10"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        title={confirmId === c.id ? 'Cliquer à nouveau pour confirmer' : 'Supprimer'}
+                        className={cn(
+                          'flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors',
+                          confirmId === c.id
+                            ? 'text-destructive bg-destructive/10 hover:bg-destructive/20'
+                            : 'text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10',
+                        )}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        {confirmId === c.id ? 'Confirmer ?' : ''}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {/* Texte */}
-              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{c.text}</p>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] text-muted-foreground/60">{formatDate(c.timestamp)}</span>
-                <button
-                  onClick={() => handleDelete(c.id)}
-                  title={confirmId === c.id ? 'Cliquer à nouveau pour confirmer' : 'Supprimer'}
-                  className={cn(
-                    'flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors',
-                    confirmId === c.id
-                      ? 'text-destructive bg-destructive/10 hover:bg-destructive/20'
-                      : 'text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10',
-                  )}
-                >
-                  <Trash2 className="w-3 h-3" />
-                  {confirmId === c.id ? 'Confirmer ?' : ''}
-                </button>
-              </div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
     </ScrollArea>
@@ -330,12 +404,16 @@ function ListView() {
 export function CommentPanel() {
   const pathname = usePathname()
   const { isOpen, view, toggle, setOpen, setView, comments, hideButton, fetchComments } = useCommentStore()
+  const [visitorIp, setVisitorIp] = useState<string | undefined>(undefined)
 
   // Masquer sur les routes auth
   const hidden = pathname?.startsWith('/auth')
 
-  // Chargement initial depuis Supabase
-  useEffect(() => { fetchComments() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Chargement initial + tracking visiteur
+  useEffect(() => {
+    fetchComments()
+    trackVisitor().then(ip => setVisitorIp(ip))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fermer sur Escape
   useEffect(() => {
@@ -409,7 +487,7 @@ export function CommentPanel() {
 
         {/* Contenu selon la vue */}
         {view === 'compose'
-          ? <ComposeView pathname={pathname ?? '/'} />
+          ? <ComposeView pathname={pathname ?? '/'} ip={visitorIp} />
           : <ListView />
         }
       </div>

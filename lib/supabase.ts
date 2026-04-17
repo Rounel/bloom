@@ -15,4 +15,6 @@ export interface DbComment {
   panel_id: string | null
   panel_label: string | null
   created_at: string
+  ip: string | null
+  user_agent: string | null
 }
