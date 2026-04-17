@@ -92,7 +92,7 @@ interface TerminalHeaderProps {
 
 export function TerminalHeader({ onSearchOpen }: TerminalHeaderProps) {
   const [notifications] = useState(3)
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
   const { setSidebarOpen } = useDashboardStore()
   const { setIsDraggingModule } = useSplitStore()
 

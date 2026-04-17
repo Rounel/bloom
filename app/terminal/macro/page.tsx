@@ -192,11 +192,11 @@ export default function MacroPage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
 
       <ModuleLayout pageKey="macro" sections={SECTIONS} mainClassName="overflow-hidden" title="Données Macroéconomiques">
-        <div className="h-full flex flex-col p-4 gap-4">
+        <div className="h-full flex flex-col gap-1">
 
         <div className="shrink-0">
         <ModuleSection pageKey="macro" id="kpis" resizable={false}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
             {macroIndicators.slice(0, 4).map(ind => (
               <div key={ind.country} className="rounded-xl border border-border/50 bg-card/80 p-4">
                 <div className="text-xs text-muted-foreground mb-1">{ind.country}</div>
@@ -216,11 +216,6 @@ export default function MacroPage() {
 
         </div>
       </ModuleLayout>
-
-      <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
-        <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 4 — Données Macroéconomiques</span>
-        <span className="ml-auto text-xs text-muted-foreground">Données simulées — maquette de présentation</span>
-      </footer>
     </div>
   )
 }

@@ -22,7 +22,7 @@ interface FormState {
 // ─── Mock credentials ─────────────────────────────────────────────────────────
 
 const VALID_USERS = [
-  { email: 'demo@bloomfield.com',  password: 'Demo@1234',  name: 'Amadou Diallo', otp: '000000' },
+  { email: 'admin@bloomfield.terminal',  password: 'bl00Mf!elD2026@',  name: 'John Doe', otp: '000000' },
   { email: 'admin@bloomfield.com', password: 'Admin@2024', name: 'Fatou Ndiaye',  otp: '000000' },
 ]
 

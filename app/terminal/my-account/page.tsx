@@ -666,12 +666,12 @@ export default function MyAccountPage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
 
       <ModuleLayout pageKey="my-account" sections={SECTIONS} mainClassName="overflow-hidden" title="Mon Compte">
-        <div className="h-full flex flex-col p-4 gap-4">
+        <div className="h-full flex flex-col gap-1">
 
           {/* KPI strip */}
           <div className="shrink-0">
             <ModuleSection pageKey="my-account" id="kpis" resizable={false}>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
                 {[
                   { label: 'Plan',               value: USER.plan,              sub: 'Actif', color: 'text-primary' },
                   { label: 'Membre depuis',       value: USER.inscription,       sub: 'Date d\'inscription', color: 'text-foreground' },
@@ -697,14 +697,6 @@ export default function MyAccountPage() {
 
         </div>
       </ModuleLayout>
-
-      <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
-        <span className="text-xs text-muted-foreground">Bloomfield Intelligence · Gestion du compte</span>
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          <Wifi className="w-3 h-3" />
-          Session sécurisée
-        </div>
-      </footer>
 
     </div>
   )

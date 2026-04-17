@@ -379,7 +379,7 @@ export default function CommunicationPage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
 
       <ModuleLayout pageKey="communication" sections={SECTIONS} mainClassName="overflow-hidden" title="Communication & Éducation">
-        <div className="h-full flex flex-col p-4">
+        <div className="h-full flex flex-col">
           <PanelGrid
             rows={panelRows}
             pageKey="communication"

@@ -180,7 +180,7 @@ function ComposeView({ pathname, ip }: { pathname: string; ip: string | undefine
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Sélectionner un panneau…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className='bg-white text-black z-500'>
                   {panels.map(p => (
                     <SelectItem key={p.id} value={p.id} className="text-xs">
                       {p.label}

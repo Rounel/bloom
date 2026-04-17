@@ -517,11 +517,11 @@ export default function PortfolioPage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
 
       <ModuleLayout pageKey="portfolio" sections={SECTIONS} mainClassName="overflow-hidden" title="Portefeuille">
-        <div className="h-full flex flex-col gap-2">
+        <div className="h-full flex flex-col gap-1">
 
         <div className="shrink-0">
         <ModuleSection pageKey="portfolio" id="kpis" resizable={false}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
             {[
               { label: 'Valeur totale', value: totalValue.toLocaleString('fr-FR') + ' FCFA', positive: true },
               { label: 'P&L total', value: (totalPnl >= 0 ? '+' : '') + totalPnl.toLocaleString('fr-FR') + ' FCFA', positive: totalPnl >= 0, sub: `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%` },

@@ -517,7 +517,7 @@ export default function AnalysePage() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <ModuleLayout pageKey="analyse" sections={SECTIONS} mainClassName="overflow-hidden" title="Analyse Financière">
-        <div className="h-full flex flex-col p-4">
+        <div className="h-full flex flex-col">
           <PanelGrid
             rows={panelRows}
             pageKey="analyse"
@@ -525,11 +525,6 @@ export default function AnalysePage() {
           />
         </div>
       </ModuleLayout>
-
-      <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
-        <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Module 3 — Analyse Financière & Risque</span>
-        <span className="ml-auto text-xs text-muted-foreground">Données simulées — maquette de présentation</span>
-      </footer>
     </div>
   )
 }

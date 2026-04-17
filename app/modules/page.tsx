@@ -289,7 +289,7 @@ function NotificationButton() {
 
 function TopBar() {
   const [time, setTime] = useState('')
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('bloomfield-theme')

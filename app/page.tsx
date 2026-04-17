@@ -171,7 +171,7 @@ function HeroSlider() {
 
   return (
     <div
-      className="relative w-full rounded-xl overflow-hidden border border-[oklch(0.269_0_0)] bg-[oklch(0.12_0_0)] select-none"
+      className="relative w-full rounded-xl overflow-hidden border border-[oklch(0.34_0_0)] bg-[oklch(0.20_0_0)] select-none"
       style={{ aspectRatio: '16/10' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -209,7 +209,7 @@ function HeroSlider() {
       {/* Prev / Next */}
       <button
         onClick={prev}
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[oklch(0.12_0_0)]/80 border border-[oklch(0.269_0_0)] flex items-center justify-center text-[oklch(0.7_0_0)] hover:text-white hover:bg-[oklch(0.18_0_0)] transition-colors"
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[oklch(0.20_0_0)]/80 border border-[oklch(0.34_0_0)] flex items-center justify-center text-[oklch(0.7_0_0)] hover:text-white hover:bg-[oklch(0.27_0_0)] transition-colors"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <path d="M15 18l-6-6 6-6" />
@@ -217,7 +217,7 @@ function HeroSlider() {
       </button>
       <button
         onClick={next}
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[oklch(0.12_0_0)]/80 border border-[oklch(0.269_0_0)] flex items-center justify-center text-[oklch(0.7_0_0)] hover:text-white hover:bg-[oklch(0.18_0_0)] transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[oklch(0.20_0_0)]/80 border border-[oklch(0.34_0_0)] flex items-center justify-center text-[oklch(0.7_0_0)] hover:text-white hover:bg-[oklch(0.27_0_0)] transition-colors"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <path d="M9 18l6-6-6-6" />
@@ -262,7 +262,7 @@ function ContactForm() {
     if (form.name && form.email) setSent(true)
   }
 
-  const inputClass = "w-full px-4 py-3 rounded bg-[oklch(0.12_0_0)] border border-[oklch(0.269_0_0)] text-sm text-[oklch(0.985_0_0)] placeholder:text-[oklch(0.4_0_0)] focus:outline-none focus:border-primary/60 transition-colors"
+  const inputClass = "w-full px-4 py-3 rounded bg-[oklch(0.90_0_0)] border border-[oklch(0.34_0_0)] text-sm text-[oklch(0.985_0_0)] placeholder:text-[oklch(0.4_0_0)] focus:outline-none focus:border-primary/60 transition-colors"
 
   if (sent) {
     return (
@@ -282,7 +282,7 @@ function ContactForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.45_0_0)] mb-1.5">Nom *</label>
+          <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.25_0_0)] mb-1.5">Nom *</label>
           <input
             type="text" required placeholder="Jean Dupont"
             value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -290,7 +290,7 @@ function ContactForm() {
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.45_0_0)] mb-1.5">Organisation</label>
+          <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.25_0_0)] mb-1.5">Organisation</label>
           <input
             type="text" placeholder="Société Générale CI"
             value={form.org} onChange={e => setForm(f => ({ ...f, org: e.target.value }))}
@@ -299,7 +299,7 @@ function ContactForm() {
         </div>
       </div>
       <div>
-        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.45_0_0)] mb-1.5">Email *</label>
+        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.25_0_0)] mb-1.5">Email *</label>
         <input
           type="email" required placeholder="vous@organisation.com"
           value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
@@ -307,7 +307,7 @@ function ContactForm() {
         />
       </div>
       <div>
-        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.45_0_0)] mb-1.5">Message</label>
+        <label className="block text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.25_0_0)] mb-1.5">Message</label>
         <textarea
           rows={5} placeholder="Décrivez vos besoins, votre profil ou posez vos questions…"
           value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -316,7 +316,7 @@ function ContactForm() {
       </div>
       <button
         type="submit"
-        className="w-full py-3 rounded bg-primary text-black font-bold text-sm hover:bg-primary/90 transition-colors"
+        className="w-full py-3 rounded bg-[oklch(0.25_0_0)] text-white font-bold text-sm hover:bg-[oklch(0.05_0_0)] transition-colors"
       >
         Envoyer le message
       </button>
@@ -338,13 +338,13 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white text-[oklch(0.985_0_0)] font-(--font-lato)">
 
       {/* Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[oklch(0.269_0_0)] bg-[oklch(0.145_0_0)]/90 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[oklch(0.34_0_0)] bg-white backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
               B
             </div>
-            <span className="text-sm font-bold tracking-widest uppercase text-[oklch(0.985_0_0)]">
+            <span className="text-sm font-bold tracking-widest uppercase text-[oklch(0.285_0_0)]">
               Bloomfield Terminal
             </span>
           </div>
@@ -352,13 +352,12 @@ export default function LandingPage() {
             {[
               { label: 'Bloomfield Intelligence', href: '#intelligence' },
               { label: 'Modules',                 href: '#modules' },
-              { label: "Mode d'accès",            href: '#access' },
               { label: 'Contact',                 href: '#contact' },
             ].map(link => (
               <a
                 key={link.label}
                 href={link.href}
-                className="text-sm text-[oklch(0.65_0_0)] hover:text-[oklch(0.985_0_0)] transition-colors whitespace-nowrap"
+                className="text-sm lg:text-base text-[oklch(0.4_0_0)] font-semibold hover:text-black transition-colors whitespace-nowrap"
               >
                 {link.label}
               </a>
@@ -368,13 +367,13 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/auth/sign-in"
-              className="text-sm text-[oklch(0.7_0_0)] hover:text-[oklch(0.985_0_0)] transition-colors"
+              className="text-sm lg:text-base text-[oklch(0.4_0_0)] font-semibold hover:text-black transition-colors"
             >
               Connexion
             </Link>
             <a
               href="#access"
-              className="text-sm px-4 py-2 rounded bg-primary text-black font-bold hover:bg-primary/90 transition-colors"
+              className="text-sm lg:text-base px-4 py-2 rounded bg-primary text-black font-bold hover:bg-primary/90 transition-colors"
             >
               Demander l'accès
             </a>
@@ -383,81 +382,41 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Background grid */}
-        {/* <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'linear-gradient(oklch(0.985 0 0) 1px, transparent 1px), linear-gradient(90deg, oklch(0.985 0 0) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-          }}
-        /> */}
-        {/* Radial glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] rounded-full bg-[oklch(0.6_0.118_184.704)]/5 blur-[120px] pointer-events-none" />
+      <section className="relative max-h-[60dvh] flex items-center overflow-hidden">
+        <HeroSlider />
+      </section>
+      
+      {/* Advantages */}
+      <section className="py-24 border-t bg-white border-[oklch(0.34_0_0)]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-xl mb-16">
+            <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-3">
+              Pourquoi Bloomfield Terminal
+            </p>
+            <h2 className="text-3xl font-bold leading-tight text-[oklch(0.25_0_0)]">
+              Conçu pour les professionnels de la finance africaine
+            </h2>
+          </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-24">
-          <div className="grid grid-cols-1 gap-12 lg:gap-16 items-center">
-
-            {/* Left — text */}
-            <div className='flex flex-row'>
-              <div className="flex flex-col justify-between">
-                <h1 className="text-3xl text-foreground sm:text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-6">
-                  Bloomfield Terminal
-                </h1>
-
-                <div className="flex flex-col sm:flex-row gap-4 mb-14 max-w-lg">
-                  <a
-                    href="#access"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded bg-primary text-black font-bold text-sm hover:bg-primary/90 transition-colors"
-                  >
-                    Demander un accès
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </a>
-                  <Link
-                    href="/auth/sign-in"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded border border-[oklch(0.269_0_0)]/50 text-sm text-[oklch(0.5_0_0)] hover:border-[oklch(0.4_0_0)] hover:text-[oklch(0.75_0_0)] transition-colors"
-                  >
-                    Accéder au terminal
-                  </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {ADVANTAGES.map((adv) => (
+              <div
+                key={adv.title}
+                className="p-6 rounded-lg border border-[oklch(0.34_0_0)] bg-[oklch(0.27_0_0)]  transition-colors group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-navy/20 flex items-center justify-center text-primary mb-4 transition-colors">
+                  {adv.icon}
                 </div>
+                <h3 className="font-bold text-sm mb-2">{adv.title}</h3>
+                <p className="text-sm text-[oklch(0.55_0_0)] leading-relaxed">{adv.description}</p>
               </div>
-
-              <div className="flex flex-col">
-                <p className="text-lg text-[oklch(0.5_0_0)] leading-relaxed mb-10">
-                  Bloomfield Terminal centralise les données BRVM, les indicateurs macroéconomiques de l'UEMOA et les flux d'actualités en un espace de travail professionnel, configurable et haute performance.
-                </p>
-
-                {/* Stats */}
-                <div className="flex flex-wrap gap-8">
-                  {[
-                    { value: '6',    label: 'modules spécialisés' },
-                    { value: 'BRVM', label: 'bourse régionale' },
-                    { value: '8',    label: 'pays UEMOA couverts' },
-                    { value: '∞',    label: 'données en temps réel' },
-                  ].map(stat => (
-                    <div key={stat.label}>
-                      <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                      <div className="text-xs text-[oklch(0.55_0_0)] mt-0.5">{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right — slider */}
-            <div className="hidden lg:block">
-              <HeroSlider />
-            </div>
-
+            ))}
           </div>
         </div>
       </section>
 
       {/* Bloomfield Intelligence */}
-      <section id="intelligence" className="py-24 border-t border-[oklch(0.269_0_0)] bg-[#A3001B]">
+      <section id="intelligence" className="py-24 border-t border-[oklch(0.34_0_0)] bg-[#6b0213]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
@@ -483,7 +442,7 @@ export default function LandingPage() {
                   { value: '200+', label: 'Rapports annuels' },
                   { value: '2003', label: 'Fondée en' },
                 ].map(stat => (
-                  <div key={stat.label} className="p-4 rounded-lg border border-[oklch(0.269_0_0)] bg-white">
+                  <div key={stat.label} className="p-4 rounded-lg border border-[oklch(0.34_0_0)] bg-white">
                     <div className="text-2xl font-bold text-primary">{stat.value}</div>
                     <div className="text-xs text-[oklch(0.55_0_0)] mt-0.5">{stat.label}</div>
                   </div>
@@ -532,7 +491,7 @@ export default function LandingPage() {
                   ),
                 },
               ].map(item => (
-                <div key={item.title} className="flex gap-4 p-5 rounded-lg border border-[oklch(0.269_0_0)] bg-white hover:border-primary/30 transition-colors group">
+                <div key={item.title} className="flex gap-4 p-5 rounded-lg border border-[oklch(0.34_0_0)] bg-white hover:border-primary/30 transition-colors group">
                   <div className="shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
                     {item.icon}
                   </div>
@@ -547,43 +506,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Advantages */}
-      <section className="py-24 border-t bg-navy border-[oklch(0.269_0_0)]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="max-w-xl mb-16">
-            <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-3">
-              Pourquoi Bloomfield Terminal
-            </p>
-            <h2 className="text-3xl font-bold leading-tight">
-              Conçu pour les professionnels de la finance africaine
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {ADVANTAGES.map((adv) => (
-              <div
-                key={adv.title}
-                className="p-6 rounded-lg border border-[oklch(0.269_0_0)] bg-[oklch(0.18_0_0)]  transition-colors group"
-              >
-                <div className="w-12 h-12 rounded-lg bg-navy/20 flex items-center justify-center text-primary mb-4 transition-colors">
-                  {adv.icon}
-                </div>
-                <h3 className="font-bold text-sm mb-2">{adv.title}</h3>
-                <p className="text-sm text-[oklch(0.55_0_0)] leading-relaxed">{adv.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Modules */}
-      <section id="modules" className="py-24 border-t border-[oklch(0.269_0_0)]">
+      <section id="modules" className="py-24 border-t border-[oklch(0.34_0_0)]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-xl mb-16">
             <p className="text-xs font-semibold tracking-widest uppercase text-[oklch(0.6_0.118_184.704)] mb-3">
               Modules
             </p>
-            <h2 className="text-3xl font-bold leading-tight text-foreground">
+            <h2 className="text-3xl font-bold leading-tight text-[oklch(0.25_0_0)]">
               Six espaces de travail dédiés
             </h2>
             <p className="text-[oklch(0.55_0_0)] mt-3 text-sm leading-relaxed">
@@ -606,14 +536,14 @@ export default function LandingPage() {
                   />
                 </div>
                 <div
-                  className={`flex items-start flex-col gap-4 p-5 ${i % 2 === 0 ? 'rounded-r-md' : 'rounded-l-md'} hover:border-[oklch(0.269_0_0)]/80  transition-all group`}
+                  className={`flex items-start flex-col gap-4 p-5 ${i % 2 === 0 ? 'rounded-r-md' : 'rounded-l-md'} hover:border-[oklch(0.34_0_0)]/80  transition-all group`}
                 >
                   <div className="shrink-0 size-20 rounded-lg bg-primary flex items-center justify-center text-white group-hover:border-[oklch(0.646_0.222_41.116)]/30 transition-colors">
                     {mod.icon}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-base md:text-lg text-foreground lg:text-3xl">{mod.name}</h3>
+                      <h3 className="font-bold text-base md:text-lg text-[oklch(0.25_0_0)] lg:text-3xl">{mod.name}</h3>
                     </div>
                     <ul className="list-disc list-inside">
                       {mod.description.split(',').map((item, i) => (
@@ -631,71 +561,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA / Access request */}
-      <section id="access" className="py-24 border-t border-[oklch(0.269_0_0)]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="relative rounded-xl border border-[oklch(0.269_0_0)] bg-[oklch(0.18_0_0)] overflow-hidden px-8 py-16 text-center">
-            {/* Background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full bg-primary/6 blur-[80px] pointer-events-none" />
-
-            <div className="relative">
-              <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-4">
-                Accès professionnel
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 max-w-2xl mx-auto leading-tight">
-                Rejoignez les professionnels qui suivent les marchés africains
-              </h2>
-              <p className="text-[oklch(0.55_0_0)] text-sm mb-10 max-w-lg mx-auto leading-relaxed">
-                L'accès au terminal est réservé aux professionnels de la finance. Laissez votre email pour qu'un conseiller Bloomfield vous contacte.
-              </p>
-
-              {submitted ? (
-                <div className="inline-flex items-center gap-3 px-6 py-4 rounded-lg border border-[oklch(0.6_0.118_184.704)]/40 bg-[oklch(0.6_0.118_184.704)]/10 text-[oklch(0.6_0.118_184.704)]">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 shrink-0">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                  <span className="font-medium text-sm">Demande envoyée — nous vous contacterons sous 24h.</span>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="votre@email.com"
-                    required
-                    className="flex-1 px-4 py-3 rounded bg-[oklch(0.145_0_0)] border border-[oklch(0.269_0_0)] text-sm text-[oklch(0.985_0_0)] placeholder:text-[oklch(0.4_0_0)] focus:outline-none focus:border-[oklch(0.646_0.222_41.116)]/60 transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    className="px-6 py-3 rounded bg-navy text-white font-bold text-sm hover:bg-primary transition-colors whitespace-nowrap"
-                  >
-                    Demander l'accès
-                  </button>
-                </form>
-              )}
-
-              <p className="text-[oklch(0.4_0_0)] text-xs mt-4">
-                Aucun engagement — réponse personnalisée sous 24h ouvrées.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Contact */}
-      <section id="contact" className="py-24 border-t border-[oklch(0.269_0_0)] bg-[oklch(0.145_0_0)]">
+      <section id="contact" className="py-24 border-t border-[oklch(0.34_0_0)] bg-primary">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
 
             {/* Infos */}
             <div>
-              <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-3">Contact</p>
+              <p className="text-xs font-semibold tracking-widest uppercase text-[oklch(0.25_0_0)] mb-3">Contact</p>
               <h2 className="text-3xl font-bold text-[oklch(0.985_0_0)] leading-tight mb-4">
                 Parlons de vos besoins
               </h2>
-              <p className="text-[oklch(0.55_0_0)] text-sm leading-relaxed mb-10">
+              <p className="text-[oklch(0.95_0_0)] text-sm leading-relaxed mb-10">
                 Notre équipe commerciale est disponible pour vous présenter la plateforme, répondre à vos questions et définir la formule d'accès adaptée à votre structure.
               </p>
 
@@ -742,12 +619,12 @@ export default function LandingPage() {
                   },
                 ].map(item => (
                   <div key={item.label} className="flex items-start gap-3">
-                    <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary mt-0.5">
+                    <div className="shrink-0 w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary mt-0.5">
                       {item.icon}
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.45_0_0)] mb-0.5">{item.label}</p>
-                      <p className="text-sm text-[oklch(0.75_0_0)]">{item.value}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-[oklch(0.25_0_0)] mb-0.5">{item.label}</p>
+                      <p className="text-sm text-[oklch(0.95_0_0)]">{item.value}</p>
                     </div>
                   </div>
                 ))}
@@ -761,7 +638,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-[oklch(0.145_0_0)]/90 border-[oklch(0.269_0_0)] py-10">
+      <footer className="border-t bg-[oklch(0.22_0_0)]/90 border-[oklch(0.34_0_0)] py-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">

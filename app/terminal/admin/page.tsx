@@ -359,18 +359,18 @@ export default function AdminPage() {
       </div>
 
       <ModuleLayout pageKey="admin" sections={SECTIONS} mainClassName="overflow-hidden" title="Paramétrage">
-        <div className="h-full flex flex-col p-4 gap-4">
+        <div className="h-full flex flex-col gap-1">
 
         <div className="shrink-0">
         <ModuleSection pageKey="admin" id="kpis" resizable={false}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
             {[
               { label: 'Utilisateurs actifs', value: activeUsers, icon: Users, color: 'text-emerald-500' },
               { label: 'Connexions aujourd\'hui', value: 47, icon: Activity, color: 'text-blue-400' },
               { label: 'Sources actives', value: activeSources, icon: Database, color: 'text-primary' },
               { label: 'Alertes système', value: 2, icon: AlertTriangle, color: 'text-yellow-500' },
             ].map(k => (
-              <div key={k.label} className="rounded-xl border border-border/50 bg-card/80 p-4 flex items-center gap-3">
+              <div key={k.label} className="rounded-md border border-border/50 bg-card/80 p-4 flex items-center gap-3">
                 <div className={cn('p-2.5 rounded-lg bg-secondary/50', k.color)}>
                   <k.icon className="w-5 h-5" />
                 </div>
@@ -392,11 +392,6 @@ export default function AdminPage() {
 
         </div>
       </ModuleLayout>
-
-      <footer className="h-10 border-t border-border/30 bg-card/30 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
-        <span className="text-xs text-muted-foreground">Bloomfield Intelligence • Administration Back-office</span>
-        <span className="ml-auto text-xs text-muted-foreground">Données simulées — maquette de présentation</span>
-      </footer>
     </div>
   )
 }

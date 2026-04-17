@@ -143,12 +143,12 @@ function SidebarItem({
       onClick={onFocus}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onFocus() }}
       className={cn(
-        'w-full flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors select-none',
+        'w-full flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors select-none border-l-2',
         focused
-          ? 'bg-primary/10 text-foreground'
+          ? 'border-primary bg-primary/10 text-foreground'
           : visible
-            ? 'text-foreground hover:bg-secondary/50'
-            : 'text-muted-foreground/40 hover:bg-secondary/30 hover:text-muted-foreground/60',
+            ? 'border-transparent text-foreground hover:bg-secondary/50'
+            : 'border-transparent text-muted-foreground/40 hover:bg-secondary/30 hover:text-muted-foreground/60',
       )}
     >
       <Icon
@@ -207,10 +207,9 @@ export function ModuleLayout({
     return () => window.removeEventListener('keydown', handler)
   }, [mobileOpen])
 
-  // Scroll vers la section focalisée (mobile uniquement)
+  // Scroll vers la section focalisée (toutes vues)
   useEffect(() => {
     if (!focusedId) return
-    if (window.innerWidth >= 1024) return
     const el = document.querySelector(`[data-module-section-id="${focusedId}"]`)
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [focusedId])

@@ -714,15 +714,6 @@ export default function DashboardPage() {
 
         </div>
       </ModuleLayout>
-
-      {/* Footer */}
-      {/* <footer className="border-t border-border/30 py-2.5 px-6 flex items-center justify-between text-[10px] text-muted-foreground bg-card/30 backdrop-blur-sm shrink-0">
-        <span>Bloomfield Terminal · Dashboard v1.0</span>
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>BRVM · Données simulées · 2026-04-12</span>
-        </div>
-      </footer> */}
     </div>
   )
 }

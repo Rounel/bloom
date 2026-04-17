@@ -3,7 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* African Finance Terminal - Professional Dark Theme */
 :root {
   /* Light mode — fond clair, texte sombre */
   --background: #eeeff0;
