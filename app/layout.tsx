@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Lato, Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { CommentPanel } from '@/components/comments/comment-panel'
+import { VisitorTracker } from '@/components/visitor-tracker'
 import './globals.css'
 
 const lato = Lato({ 
@@ -58,7 +58,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('bloomfield-theme');if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})()` }} />
       </head>
       <body className={`${lato.variable} ${roboto.variable} antialiased bg-background text-foreground`}>
-        {/* <CommentPanel /> */}
+        <VisitorTracker />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
